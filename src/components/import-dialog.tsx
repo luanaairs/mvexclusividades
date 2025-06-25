@@ -97,7 +97,7 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
         <DialogHeader>
           <DialogTitle>Importar Imóvel de Documento</DialogTitle>
           <DialogDescription>
-            {extractedData ? "Confira os dados extraídos, edite se necessário e salve." : "Selecione um arquivo .docx ou .pdf para extrair os dados do imóvel."}
+            {extractedData ? "Confira os dados extraídos, edite se necessário e salve." : "Selecione um arquivo .docx, .pdf ou imagem para extrair os dados do imóvel."}
           </DialogDescription>
         </DialogHeader>
         {isPending ? (
@@ -126,9 +126,9 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
                 <p className="mb-2 text-sm text-muted-foreground">
                   <span className="font-semibold text-primary">Clique para carregar</span> ou arraste e solte
                 </p>
-                <p className="text-xs text-muted-foreground">DOCX ou PDF</p>
+                <p className="text-xs text-muted-foreground">DOCX, PDF ou Imagem</p>
               </div>
-              <Input id="file-upload" type="file" className="hidden" accept=".docx,.pdf" onChange={handleFileChange} />
+              <Input id="file-upload" type="file" className="hidden" accept=".docx,.pdf,image/*" onChange={handleFileChange} />
             </label>
           </div>
         )}

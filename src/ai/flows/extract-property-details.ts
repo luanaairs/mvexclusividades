@@ -15,7 +15,7 @@ const ExtractPropertyDetailsInputSchema = z.object({
   documentDataUri: z
     .string()
     .describe(
-      "A DOCX or PDF document containing property listings, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A DOCX, PDF or image document containing property listings, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
 export type ExtractPropertyDetailsInput = z.infer<typeof ExtractPropertyDetailsInputSchema>;
@@ -41,9 +41,9 @@ const prompt = ai.definePrompt({
   name: 'extractPropertyDetailsPrompt',
   input: {schema: ExtractPropertyDetailsInputSchema},
   output: {schema: ExtractPropertyDetailsOutputSchema},
-  prompt: `You are an expert real estate data extraction specialist.
+  prompt: `You are an expert real estate data extraction specialist with OCR capabilities.
 
-You will receive a document containing property listings. Your task is to extract the relevant details from the document and return them in a structured JSON format.
+You will receive a document (like a PDF, DOCX, or an image) containing property listings. Your task is to first perform OCR on the document if it's an image or a scanned document to extract all the text. Then, analyze the text to extract the relevant details and return them in a structured JSON format.
 
 Extract the following information:
 - Agent/Company Name: The name of the agent or company listing the property.
