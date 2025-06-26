@@ -11,6 +11,7 @@ import { Separator } from "./ui/separator";
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: 'APARTAMENTO', label: 'Apartamento' },
   { value: 'CASA', label: 'Casa' },
+  { value: 'LOTE', label: 'Lote' },
   { value: 'OUTRO', label: 'Outro' },
 ];
 

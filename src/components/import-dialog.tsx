@@ -31,7 +31,7 @@ const propertySchema = z.object({
   paymentTerms: z.string().min(1, { message: "As condições de pagamento são obrigatórias." }),
   additionalFeatures: z.string().optional(),
   tags: z.string().optional(),
-  propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
+  propertyType: z.enum(['CASA', 'APARTAMENTO', 'LOTE', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
   category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).optional().or(z.literal('')),
   status: z.enum(['DISPONIVEL', 'NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
   brokerContact: z.string().optional(),
@@ -56,6 +56,7 @@ interface ImportDialogProps {
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: 'APARTAMENTO', label: 'Apartamento' },
   { value: 'CASA', label: 'Casa' },
+  { value: 'LOTE', label: 'Lote' },
   { value: 'OUTRO', label: 'Outro' },
 ];
 

@@ -34,7 +34,7 @@ const PropertyDetailsSchema = z.object({
   price: z.number().describe('The price of the property.'),
   paymentTerms: z.string().describe('The payment terms for the property.'),
   additionalFeatures: z.string().describe('Any additional features of the property.'),
-  propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO']).describe('The type of property (e.g., CASA, APARTAMENTO).').optional(),
+  propertyType: z.enum(['CASA', 'APARTAMENTO', 'LOTE', 'OUTRO']).describe('The type of property (e.g., CASA, APARTAMENTO, LOTE).').optional(),
   brokerContact: z.string().describe('The contact information for the broker/agent (phone, email).').optional(),
   photoDriveLink: z.string().url().describe('A URL link to a photo gallery (e.g., Google Drive).').optional(),
   extraMaterialLink: z.string().url().describe('A URL link to extra materials (e.g., brochures, videos).').optional(),
@@ -75,7 +75,7 @@ For each property, extract the following information:
 - Price: The price of the property.
 - Payment Terms: The payment terms for the property.
 - Additional Features: Any additional features of the property.
-- Property Type: The type of property (e.g., CASA, APARTAMENTO, OUTRO).
+- Property Type: The type of property (e.g., CASA, APARTAMENTO, LOTE, OUTRO).
 - Category: The category of the property (e.g., FRENTE, LATERAL, FUNDOS, DECORADO, MOBILIADO, COM_VISTA_PARA_O_MAR).
 - Broker Contact: The contact information for the broker/agent (phone, email).
 - Photo Drive Link: A URL link to a photo gallery (e.g., Google Drive).
