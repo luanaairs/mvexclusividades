@@ -4,7 +4,8 @@ export type PropertyStatus = 'DISPONIVEL' | 'NOVO_NA_SEMANA' | 'ALTERADO' | 'VEN
 
 export type Property = {
   id: string;
-  agentName: string;
+  brokerName: string;
+  agencyName?: string;
   propertyName: string;
   houseNumber: string;
   bedrooms: number;
@@ -17,7 +18,7 @@ export type Property = {
   paymentTerms: string;
   additionalFeatures: string;
   tags: string[];
-  category?: PropertyCategory;
+  categories?: PropertyCategory[];
   propertyType: PropertyType;
   status: PropertyStatus;
   brokerContact?: string;

@@ -23,7 +23,8 @@ export type ExtractPropertyDetailsInput = z.infer<typeof ExtractPropertyDetailsI
 
 // Schema for a single property
 const PropertyDetailsSchema = z.object({
-  agentName: z.string().describe('The name of the agent or company listing the property.'),
+  brokerName: z.string().describe('The name of the broker listing the property.'),
+  agencyName: z.string().describe('The name of the real estate agency.').optional(),
   propertyName: z.string().describe('The name of the property or development.'),
   houseNumber: z.string().describe('The house or apartment number.').optional(),
   bedrooms: z.number().describe('The number of bedrooms in the property.'),
@@ -40,7 +41,7 @@ const PropertyDetailsSchema = z.object({
   extraMaterialLink: z.string().url().describe('A URL link to extra materials (e.g., brochures, videos).').optional(),
   address: z.string().describe('The full property address.').optional(),
   neighborhood: z.string().describe('The neighborhood of the property.').optional(),
-  category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).describe('The property category.').optional(),
+  categories: z.array(z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR'])).describe('A list of property categories.').optional(),
 });
 export type PropertyDetails = z.infer<typeof PropertyDetailsSchema>;
 
@@ -64,7 +65,8 @@ const prompt = ai.definePrompt({
 You will receive a document (like a PDF, DOCX, or an image) that may contain one or more property listings. Your task is to first perform OCR on the document if it's an image or a scanned document to extract all the text. Then, analyze the text to identify and extract the details for EACH property listed.
 
 For each property, extract the following information:
-- Agent/Company Name: The name of the agent or company listing the property.
+- Broker Name: The name of the broker listing the property.
+- Agency Name: The name of the real estate agency.
 - Property Name: The name of the property or development.
 - House/Apartment Number: The specific number of the unit.
 - Number of Bedrooms: The number of bedrooms in the property.
@@ -76,7 +78,7 @@ For each property, extract the following information:
 - Payment Terms: The payment terms for the property.
 - Additional Features: Any additional features of the property.
 - Property Type: The type of property (e.g., CASA, APARTAMENTO, LOTE, OUTRO).
-- Category: The category of the property (e.g., FRENTE, LATERAL, FUNDOS, DECORADO, MOBILIADO, COM_VISTA_PARA_O_MAR).
+- Categories: A list of categories for the property (e.g., FRENTE, LATERAL, FUNDOS, DECORADO, MOBILIADO, COM_VISTA_PARA_O_MAR).
 - Broker Contact: The contact information for the broker/agent (phone, email).
 - Photo Drive Link: A URL link to a photo gallery (e.g., Google Drive).
 - Extra Material Link: A URL link to extra materials (e.g., brochures, videos).

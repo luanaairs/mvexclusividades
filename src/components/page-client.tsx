@@ -57,6 +57,9 @@ export function PageClient() {
     if (data.neighborhood && !tags.includes(data.neighborhood)) {
         tags.push(data.neighborhood);
     }
+    if (data.agencyName && !tags.includes(data.agencyName)) {
+      tags.push(data.agencyName);
+    }
     
     const newProperty: Property = {
       id: new Date().toISOString(),
@@ -73,6 +76,9 @@ export function PageClient() {
       if (data.neighborhood && !tags.includes(data.neighborhood)) {
           tags.push(data.neighborhood);
       }
+      if (data.agencyName && !tags.includes(data.agencyName)) {
+        tags.push(data.agencyName);
+      }
       return {
         id: `${new Date().toISOString()}-${index}`,
         ...data,
@@ -88,6 +94,9 @@ export function PageClient() {
     const tags = data.tags || [];
     if (data.neighborhood && !tags.includes(data.neighborhood)) {
         tags.push(data.neighborhood);
+    }
+    if (data.agencyName && !tags.includes(data.agencyName)) {
+      tags.push(data.agencyName);
     }
     const updatedProperty = { ...data, id, tags };
     setProperties(prev => prev.map(p => p.id === id ? updatedProperty : p));

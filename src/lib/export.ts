@@ -10,7 +10,7 @@ function escapeCsvCell(cellData: string | number | undefined): string {
 
 export function exportToCsv(properties: Property[]) {
   const headers = [
-    "Corretor/Empresa", "Empreendimento", "Número", "Tipo", "Categoria", "Status",
+    "Corretor", "Imobiliária", "Empreendimento", "Número", "Tipo", "Categorias", "Status",
     "Quartos", "Banheiros", "Suítes", "Lavabos",
     "Área Privativa (m²)", "Área Total (m²)", "Preço", "Condições de Pagamento", 
     "Características Adicionais", "Tags", "Endereço", "Bairro", "Contato do Corretor",
@@ -18,11 +18,12 @@ export function exportToCsv(properties: Property[]) {
   ];
   
   const rows = properties.map(p => [
-    escapeCsvCell(p.agentName),
+    escapeCsvCell(p.brokerName),
+    escapeCsvCell(p.agencyName),
     escapeCsvCell(p.propertyName),
     escapeCsvCell(p.houseNumber),
     escapeCsvCell(p.propertyType),
-    escapeCsvCell(p.category),
+    escapeCsvCell(p.categories?.join(', ')),
     escapeCsvCell(p.status),
     p.bedrooms.toString(),
     p.bathrooms.toString(),
@@ -66,11 +67,12 @@ export function exportToWord(properties: Property[]) {
       <table border="1" style="border-collapse: collapse; width: 100%;">
         <thead>
           <tr style="background-color: #f2f2f2;">
-            <th style="padding: 8px;">Corretor/Empresa</th>
+            <th style="padding: 8px;">Corretor</th>
+            <th style="padding: 8px;">Imobiliária</th>
             <th style="padding: 8px;">Empreendimento</th>
             <th style="padding: 8px;">Número</th>
             <th style="padding: 8px;">Tipo</th>
-            <th style="padding: 8px;">Categoria</th>
+            <th style="padding: 8px;">Categorias</th>
             <th style="padding: 8px;">Status</th>
             <th style="padding: 8px;">Quartos</th>
             <th style="padding: 8px;">Banheiros</th>
@@ -92,11 +94,12 @@ export function exportToWord(properties: Property[]) {
         <tbody>
           ${properties.map(p => `
             <tr>
-              <td style="padding: 8px;">${p.agentName || ''}</td>
+              <td style="padding: 8px;">${p.brokerName || ''}</td>
+              <td style="padding: 8px;">${p.agencyName || ''}</td>
               <td style="padding: 8px;">${p.propertyName || ''}</td>
               <td style="padding: 8px;">${p.houseNumber || ''}</td>
               <td style="padding: 8px;">${p.propertyType || ''}</td>
-              <td style="padding: 8px;">${p.category || ''}</td>
+              <td style="padding: 8px;">${p.categories?.join(', ') || ''}</td>
               <td style="padding: 8px;">${p.status || ''}</td>
               <td style="padding: 8px;">${p.bedrooms}</td>
               <td style="padding: 8px;">${p.bathrooms}</td>

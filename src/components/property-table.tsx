@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { type Property, type PropertyStatus } from "@/types";
+import { type Property, type PropertyStatus, type PropertyCategory } from "@/types";
 import {
   Table,
   TableBody,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Home, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
+import { Edit, Trash2, Home, ArrowUp, ArrowDown, ChevronsUpDown, BedDouble, Bath, CarFront, SquareStack } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,8 +23,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent } from './ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { cn } from '@/lib/utils';
+import { Separator } from './ui/separator';
 
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 
@@ -62,6 +63,9 @@ const renderStatusBadge = (status: PropertyStatus) => {
   }
 };
 
+const formatCategory = (category: PropertyCategory) => {
+    return category.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+}
 
 export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortConfig }: PropertyTableProps) {
   const [deleteCandidate, setDeleteCandidate] = useState<Property | null>(null);
@@ -90,72 +94,122 @@ export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortC
 
   return (
     <>
-      <Card className="mt-4">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Status</TableHead>
-              <TableHead>Empreendimento</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead className="text-center">
-                <Button variant="ghost" onClick={() => requestSort('bedrooms')}>
-                  Q/B/S/L
-                  {getSortIcon('bedrooms')}
-                </Button>
-              </TableHead>
-              <TableHead className="text-center">
-                <Button variant="ghost" onClick={() => requestSort('areaSize')}>
-                  Área (m²)
-                  {getSortIcon('areaSize')}
-                </Button>
-              </TableHead>
-              <TableHead>
-                <Button variant="ghost" onClick={() => requestSort('price')}>
-                  Preço
-                  {getSortIcon('price')}
-                </Button>
-              </TableHead>
-              <TableHead>Tags</TableHead>
-              <TableHead className="text-right w-[120px]">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {properties.map((property) => (
-              <TableRow 
-                key={property.id} 
-                className={cn((property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through text-muted-foreground/80')}
-              >
-                <TableCell>{renderStatusBadge(property.status)}</TableCell>
-                <TableCell className="font-medium">{property.propertyName} - {property.houseNumber}</TableCell>
-                <TableCell>{formatPropertyType(property.propertyType)}</TableCell>
-                <TableCell className="text-center">{`${property.bedrooms}/${property.bathrooms}/${property.suites}/${property.lavabos}`}</TableCell>
-                <TableCell className="text-center">{property.areaSize}{property.totalAreaSize ? ` / ${property.totalAreaSize}`: ''}</TableCell>
-                <TableCell>{formatCurrency(property.price)}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {property.category && <Badge variant="outline">{property.category.replace(/_/g, ' ')}</Badge>}
+      {/* Desktop View */}
+      <div className="hidden md:block">
+        <Card className="mt-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Status</TableHead>
+                <TableHead>Empreendimento</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead className="text-center">
+                  <Button variant="ghost" onClick={() => requestSort('bedrooms')}>
+                    Q/B/S/L
+                    {getSortIcon('bedrooms')}
+                  </Button>
+                </TableHead>
+                <TableHead className="text-center">
+                  <Button variant="ghost" onClick={() => requestSort('areaSize')}>
+                    Área (m²)
+                    {getSortIcon('areaSize')}
+                  </Button>
+                </TableHead>
+                <TableHead>
+                  <Button variant="ghost" onClick={() => requestSort('price')}>
+                    Preço
+                    {getSortIcon('price')}
+                  </Button>
+                </TableHead>
+                <TableHead>Tags</TableHead>
+                <TableHead className="text-right w-[120px]">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {properties.map((property) => (
+                <TableRow 
+                  key={property.id} 
+                  className={cn((property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through text-muted-foreground/80')}
+                >
+                  <TableCell>{renderStatusBadge(property.status)}</TableCell>
+                  <TableCell className="font-medium">{property.propertyName} - {property.houseNumber}</TableCell>
+                  <TableCell>{formatPropertyType(property.propertyType)}</TableCell>
+                  <TableCell className="text-center">{`${property.bedrooms}/${property.bathrooms}/${property.suites}/${property.lavabos}`}</TableCell>
+                  <TableCell className="text-center">{property.areaSize}{property.totalAreaSize ? ` / ${property.totalAreaSize}`: ''}</TableCell>
+                  <TableCell>{formatCurrency(property.price)}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {property.categories?.map((cat) => <Badge key={cat} variant="outline">{formatCategory(cat)}</Badge>)}
+                      {property.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary">{tag}</Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => onEdit(property)}>
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Editar</span>
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteCandidate(property)}>
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Excluir</span>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
+
+      {/* Mobile View */}
+      <div className="md:hidden mt-4 space-y-4">
+        {properties.map((property) => (
+            <Card key={property.id} className={cn((property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'opacity-60')}>
+              <CardHeader>
+                  <div className="flex justify-between items-start">
+                      <div>
+                          <CardTitle className={cn("text-lg", (property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through')}>
+                            {property.propertyName} - {property.houseNumber}
+                          </CardTitle>
+                          <CardDescription>{formatPropertyType(property.propertyType)}</CardDescription>
+                      </div>
+                      {renderStatusBadge(property.status)}
+                  </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <div className={cn("text-2xl font-bold text-primary", (property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through')}>
+                      {formatCurrency(property.price)}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2"><BedDouble className="h-4 w-4" /> <span>{property.bedrooms} Quartos</span></div>
+                      <div className="flex items-center gap-2"><Bath className="h-4 w-4" /> <span>{property.bathrooms} Banheiros</span></div>
+                      <div className="flex items-center gap-2"><CarFront className="h-4 w-4" /> <span>{property.suites} Suítes</span></div>
+                      <div className="flex items-center gap-2"><SquareStack className="h-4 w-4" /> <span>{property.areaSize}m²</span></div>
+                  </div>
+                  <Separator />
+                  <div className="flex flex-wrap gap-2">
+                    {property.categories?.map((cat) => <Badge key={cat} variant="outline">{formatCategory(cat)}</Badge>)}
                     {property.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary">{tag}</Badge>
+                        <Badge key={tag} variant="secondary">{tag}</Badge>
                     ))}
                   </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => onEdit(property)}>
-                      <Edit className="h-4 w-4" />
-                      <span className="sr-only">Editar</span>
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteCandidate(property)}>
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Excluir</span>
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+              </CardContent>
+              <CardFooter className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => onEdit(property)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar
+                </Button>
+                <Button variant="destructive" size="sm" onClick={() => setDeleteCandidate(property)}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
+                </Button>
+              </CardFooter>
+            </Card>
+        ))}
+      </div>
       
       <AlertDialog open={!!deleteCandidate} onOpenChange={(isOpen) => !isOpen && setDeleteCandidate(null)}>
         <AlertDialogContent>

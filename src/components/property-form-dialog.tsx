@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Form } from "@/components/ui/form";
 import { PropertyFormFields } from "./property-form-fields";
-import { type Property } from "@/types";
+import { type Property, type PropertyCategory } from "@/types";
 import { useEffect } from "react";
 
 const formSchema = z.object({
-  agentName: z.string().min(1, { message: "O nome do corretor/empresa é obrigatório." }),
+  brokerName: z.string().min(1, { message: "O nome do corretor é obrigatório." }),
+  agencyName: z.string().optional(),
   propertyName: z.string().min(1, { message: "O nome do empreendimento é obrigatório." }),
   houseNumber: z.string().min(1, { message: "O número é obrigatório." }),
   bedrooms: z.coerce.number().min(0, "O valor não pode ser negativo."),
@@ -25,7 +26,7 @@ const formSchema = z.object({
   additionalFeatures: z.string().optional(),
   tags: z.string().optional(),
   propertyType: z.enum(['CASA', 'APARTAMENTO', 'LOTE', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
-  category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).optional().or(z.literal('')),
+  categories: z.array(z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR'])).optional(),
   status: z.enum(['DISPONIVEL', 'NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
   brokerContact: z.string().optional(),
   photoDriveLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
@@ -45,7 +46,8 @@ interface PropertyFormDialogProps {
 }
 
 const defaultValues: FormValues = {
-    agentName: '',
+    brokerName: '',
+    agencyName: '',
     propertyName: '',
     houseNumber: '',
     bedrooms: 0,
@@ -59,7 +61,7 @@ const defaultValues: FormValues = {
     additionalFeatures: '',
     tags: '',
     propertyType: 'APARTAMENTO',
-    category: '',
+    categories: [],
     status: 'DISPONIVEL',
     brokerContact: '',
     photoDriveLink: '',
@@ -81,12 +83,13 @@ export function PropertyFormDialog({ isOpen, onOpenChange, onSubmit, property }:
           ...property,
           totalAreaSize: property.totalAreaSize || '',
           tags: property.tags.join(', '),
-          category: property.category || '',
+          categories: property.categories || [],
           brokerContact: property.brokerContact || '',
           photoDriveLink: property.photoDriveLink || '',
           extraMaterialLink: property.extraMaterialLink || '',
           address: property.address || '',
           neighborhood: property.neighborhood || '',
+          agencyName: property.agencyName || '',
         });
       } else {
         form.reset(defaultValues);
@@ -99,12 +102,13 @@ export function PropertyFormDialog({ isOpen, onOpenChange, onSubmit, property }:
       ...data,
       totalAreaSize: Number(data.totalAreaSize) || undefined,
       tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-      category: data.category || undefined,
+      categories: data.categories as PropertyCategory[] || undefined,
       brokerContact: data.brokerContact || undefined,
       photoDriveLink: data.photoDriveLink || undefined,
       extraMaterialLink: data.extraMaterialLink || undefined,
       address: data.address || undefined,
       neighborhood: data.neighborhood || undefined,
+      agencyName: data.agencyName || undefined,
     };
     onSubmit(propertyData);
     onOpenChange(false);

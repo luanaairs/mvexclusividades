@@ -7,6 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type PropertyCategory, type PropertyType, type PropertyStatus } from "@/types";
 import { Separator } from "./ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { Checkbox } from "./ui/checkbox";
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
   { value: 'APARTAMENTO', label: 'Apartamento' },
@@ -43,18 +48,31 @@ export function PropertyFormFields() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={control}
-              name="agentName"
+              name="brokerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome do Corretor/Empresa</FormLabel>
+                  <FormLabel>Nome do Corretor</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ex: Imobiliária Exemplo" {...field} />
+                    <Input placeholder="Ex: João da Silva" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={control}
+              name="agencyName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome da Imobiliária (será usado como tag)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: Imobiliária Sol" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          <div className="grid grid-cols-2 gap-4 md:col-span-2">
             <FormField
               control={control}
               name="propertyName"
@@ -82,7 +100,7 @@ export function PropertyFormFields() {
               )}
             />
           </div>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4 md:col-span-2">
             <FormField
               control={control}
               name="bedrooms"
@@ -136,7 +154,7 @@ export function PropertyFormFields() {
               )}
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:col-span-2">
             <FormField
               control={control}
               name="areaSize"
@@ -168,7 +186,7 @@ export function PropertyFormFields() {
             control={control}
             name="price"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="md:col-span-2">
                 <FormLabel>Preço (R$)</FormLabel>
                 <FormControl>
                   <Input type="number" placeholder="750000" {...field} />
@@ -181,7 +199,7 @@ export function PropertyFormFields() {
             control={control}
             name="paymentTerms"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="md:col-span-2">
                 <FormLabel>Condições de Pagamento</FormLabel>
                 <FormControl>
                   <Input placeholder="Ex: 20% de entrada + financiamento" {...field} />
@@ -222,26 +240,58 @@ export function PropertyFormFields() {
               />
               <FormField
                 control={control}
-                name="category"
+                name="categories"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria (Opcional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {CATEGORIES.map(cat => (
-                          <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+                    <FormItem className="flex flex-col">
+                        <FormLabel>Categorias</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                    "w-full justify-between",
+                                    !field.value?.length && "text-muted-foreground"
+                                )}
+                                >
+                                {field.value?.length
+                                    ? field.value.map(v => CATEGORIES.find(c => c.value === v)?.label).join(", ")
+                                    : "Selecione categorias"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <div className="p-2 space-y-1">
+                                    {CATEGORIES.map((category) => (
+                                        <FormItem key={category.value} className="flex flex-row items-start space-x-3 space-y-0">
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={field.value?.includes(category.value)}
+                                                    onCheckedChange={(checked) => {
+                                                        return checked
+                                                        ? field.onChange([...(field.value || []), category.value])
+                                                        : field.onChange(
+                                                            field.value?.filter(
+                                                            (value) => value !== category.value
+                                                            )
+                                                        )
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="font-normal">
+                                                {category.label}
+                                            </FormLabel>
+                                        </FormItem>
+                                    ))}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
                 )}
-              />
+                />
             <FormField
               control={control}
               name="status"

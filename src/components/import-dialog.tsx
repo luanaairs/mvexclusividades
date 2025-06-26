@@ -18,7 +18,8 @@ import { type ExtractPropertyDetailsOutput, type PropertyDetails } from "@/ai/fl
 import { ScrollArea } from "./ui/scroll-area";
 
 const propertySchema = z.object({
-  agentName: z.string().min(1, { message: "O nome do corretor/empresa é obrigatório." }),
+  brokerName: z.string().min(1, { message: "O nome do corretor é obrigatório." }),
+  agencyName: z.string().optional(),
   propertyName: z.string().min(1, { message: "O nome do empreendimento é obrigatório." }),
   houseNumber: z.string().min(1, { message: "O número é obrigatório." }),
   bedrooms: z.coerce.number().min(0, "O valor não pode ser negativo."),
@@ -32,7 +33,7 @@ const propertySchema = z.object({
   additionalFeatures: z.string().optional(),
   tags: z.string().optional(),
   propertyType: z.enum(['CASA', 'APARTAMENTO', 'LOTE', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
-  category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).optional().or(z.literal('')),
+  categories: z.string().optional(),
   status: z.enum(['DISPONIVEL', 'NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
   brokerContact: z.string().optional(),
   photoDriveLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
@@ -107,7 +108,8 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
           }
           setExtractedData(result.data);
           const formattedProperties = result.data.properties.map((p: PropertyDetails) => ({
-            agentName: p.agentName || '',
+            brokerName: p.brokerName || '',
+            agencyName: p.agencyName || '',
             propertyName: p.propertyName || '',
             houseNumber: p.houseNumber || '',
             bedrooms: p.bedrooms ?? 0,
@@ -121,7 +123,7 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
             additionalFeatures: p.additionalFeatures || '',
             tags: '',
             propertyType: p.propertyType || 'OUTRO',
-            category: p.category || '',
+            categories: p.categories?.join(', ') || '',
             status: 'NOVO_NA_SEMANA' as PropertyStatus,
             brokerContact: p.brokerContact || '',
             photoDriveLink: p.photoDriveLink || '',
@@ -146,12 +148,13 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
       ...p,
       totalAreaSize: Number(p.totalAreaSize) || undefined,
       tags: p.tags ? p.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-      category: p.category as PropertyCategory || undefined,
+      categories: p.categories ? p.categories.split(',').map(tag => tag.trim().toUpperCase() as PropertyCategory).filter(Boolean) : [],
       brokerContact: p.brokerContact || undefined,
       photoDriveLink: p.photoDriveLink || undefined,
       extraMaterialLink: p.extraMaterialLink || undefined,
       address: p.address || undefined,
       neighborhood: p.neighborhood || undefined,
+      agencyName: p.agencyName || undefined,
     }));
     onImport(propertiesData);
     onOpenChange(false);
