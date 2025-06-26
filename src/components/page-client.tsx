@@ -66,6 +66,23 @@ export function PageClient() {
     setProperties(prev => [newProperty, ...prev]);
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" adicionado.` });
   };
+  
+  const addMultipleProperties = (newPropertiesData: Omit<Property, 'id'>[]) => {
+    const newProperties: Property[] = newPropertiesData.map((data, index) => {
+      const tags = data.tags || [];
+      if (data.neighborhood && !tags.includes(data.neighborhood)) {
+          tags.push(data.neighborhood);
+      }
+      return {
+        id: `${new Date().toISOString()}-${index}`,
+        ...data,
+        tags,
+      };
+    });
+  
+    setProperties(prev => [...newProperties, ...prev]);
+    toast({ title: "Sucesso!", description: `${newProperties.length} imóvel${newProperties.length > 1 ? 'is' : ''} importado${newProperties.length > 1 ? 's' : ''}.` });
+  };
 
   const updateProperty = (data: Omit<Property, 'id'>, id: string) => {
     const tags = data.tags || [];
@@ -211,7 +228,7 @@ export function PageClient() {
       <ImportDialog
         isOpen={isImportDialogOpen}
         onOpenChange={setImportDialogOpen}
-        onImport={addProperty}
+        onImport={addMultipleProperties}
       />
     </div>
   );
