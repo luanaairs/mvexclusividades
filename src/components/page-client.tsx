@@ -31,7 +31,7 @@ const mockProperties: Property[] = [
     price: 1200000,
     paymentTerms: 'Entrada de 20% + Financiamento',
     additionalFeatures: 'Piscina e academia no prédio.',
-    tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral'],
+    tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM'],
     categories: ['FR', 'VM'],
     propertyType: 'APARTAMENTO',
     status: 'NOVO_NA_SEMANA',
@@ -55,7 +55,7 @@ const mockProperties: Property[] = [
     price: 2500000,
     paymentTerms: 'À vista com 10% de desconto',
     additionalFeatures: 'Amplo jardim com churrasqueira.',
-    tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis'],
+    tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis', 'M'],
     categories: ['M'],
     propertyType: 'CASA',
     status: 'DISPONIVEL',
@@ -76,7 +76,7 @@ const mockProperties: Property[] = [
     price: 850000,
     paymentTerms: 'Sinal + parcelas mensais',
     additionalFeatures: 'Salão de festas e playground.',
-    tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral'],
+    tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral', 'L'],
     categories: ['L'],
     propertyType: 'APARTAMENTO',
     status: 'ALTERADO',
@@ -116,7 +116,7 @@ const mockProperties: Property[] = [
     price: 5000000,
     paymentTerms: 'Entrada de 30% + Financiamento',
     additionalFeatures: 'Piscina privativa, vista panorâmica.',
-    tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral'],
+    tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM', 'MD'],
     categories: ['FR', 'VM', 'MD'],
     propertyType: 'APARTAMENTO',
     status: 'VENDIDO_NA_SEMANA',
@@ -164,12 +164,15 @@ export function PageClient() {
   }, [properties, isClient, toast]);
 
   const addProperty = (data: Omit<Property, 'id'>) => {
-    const tags = data.tags || [];
+    let tags = data.tags || [];
     if (data.neighborhood && !tags.includes(data.neighborhood)) {
         tags.push(data.neighborhood);
     }
     if (data.agencyName && !tags.includes(data.agencyName)) {
       tags.push(data.agencyName);
+    }
+    if (data.categories) {
+      tags = [...new Set([...tags, ...data.categories])];
     }
     
     const newProperty: Property = {
@@ -183,12 +186,15 @@ export function PageClient() {
   
   const addMultipleProperties = (newPropertiesData: Omit<Property, 'id'>[]) => {
     const newProperties: Property[] = newPropertiesData.map((data, index) => {
-      const tags = data.tags || [];
+      let tags = data.tags || [];
       if (data.neighborhood && !tags.includes(data.neighborhood)) {
           tags.push(data.neighborhood);
       }
       if (data.agencyName && !tags.includes(data.agencyName)) {
         tags.push(data.agencyName);
+      }
+      if (data.categories) {
+        tags = [...new Set([...tags, ...data.categories])];
       }
       return {
         id: `${new Date().toISOString()}-${index}`,
@@ -202,12 +208,15 @@ export function PageClient() {
   };
 
   const updateProperty = (data: Omit<Property, 'id'>, id: string) => {
-    const tags = data.tags || [];
+    let tags = data.tags || [];
     if (data.neighborhood && !tags.includes(data.neighborhood)) {
         tags.push(data.neighborhood);
     }
     if (data.agencyName && !tags.includes(data.agencyName)) {
       tags.push(data.agencyName);
+    }
+    if (data.categories) {
+      tags = [...new Set([...tags, ...data.categories])];
     }
     const updatedProperty = { ...data, id, tags };
     setProperties(prev => prev.map(p => p.id === id ? updatedProperty : p));

@@ -63,19 +63,6 @@ const renderStatusBadge = (status: PropertyStatus) => {
   }
 };
 
-const categoryMap: Record<PropertyCategory, string> = {
-    'FR': 'Frente',
-    'L': 'Lateral',
-    'FU': 'Fundos',
-    'M': 'Mobiliado',
-    'MD': 'Decorado',
-    'VM': 'Vista p/ Mar'
-};
-
-const formatCategory = (category: PropertyCategory) => {
-    return categoryMap[category] || category;
-}
-
 export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortConfig }: PropertyTableProps) {
   const [deleteCandidate, setDeleteCandidate] = useState<Property | null>(null);
 
@@ -148,7 +135,6 @@ export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortC
                   <TableCell>{formatCurrency(property.price)}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {property.categories?.map((cat) => <Badge key={cat} variant="outline">{formatCategory(cat)}</Badge>)}
                       {property.tags.map((tag) => (
                         <Badge key={tag} variant="secondary">{tag}</Badge>
                       ))}
@@ -200,7 +186,6 @@ export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortC
                   </div>
                   <Separator />
                   <div className="flex flex-wrap gap-2">
-                    {property.categories?.map((cat) => <Badge key={cat} variant="outline">{formatCategory(cat)}</Badge>)}
                     {property.tags.map((tag) => (
                         <Badge key={tag} variant="secondary">{tag}</Badge>
                     ))}

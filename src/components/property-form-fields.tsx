@@ -243,7 +243,7 @@ export function PropertyFormFields() {
                 name="categories"
                 render={({ field }) => (
                     <FormItem className="flex flex-col">
-                        <FormLabel>Categorias</FormLabel>
+                        <FormLabel>Categorias (serão usadas como tags)</FormLabel>
                         <Popover>
                             <PopoverTrigger asChild>
                             <FormControl>
@@ -256,7 +256,7 @@ export function PropertyFormFields() {
                                 )}
                                 >
                                 {field.value?.length
-                                    ? field.value.map(v => CATEGORIES.find(c => c.value === v)?.label).join(", ")
+                                    ? field.value.join(", ")
                                     : "Selecione categorias"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
@@ -281,7 +281,7 @@ export function PropertyFormFields() {
                                                 />
                                             </FormControl>
                                             <FormLabel className="font-normal">
-                                                {category.label}
+                                                {category.label} ({category.value})
                                             </FormLabel>
                                         </FormItem>
                                     ))}
@@ -407,9 +407,9 @@ export function PropertyFormFields() {
                 name="tags"
                 render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                    <FormLabel>Tags (separadas por vírgula)</FormLabel>
+                    <FormLabel>Tags Adicionais (separadas por vírgula)</FormLabel>
                     <FormControl>
-                    <Input placeholder="Ex: alto padrão, vista mar, novo" {...field} />
+                    <Input placeholder="Ex: alto padrão, investimento" {...field} />
                     </FormControl>
                     <FormMessage />
                 </FormItem>
