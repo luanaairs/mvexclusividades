@@ -17,111 +17,111 @@ const LOCAL_STORAGE_KEY = 'exclusivity-list';
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 
 const mockProperties: Property[] = [
-  {
-    id: 'mock-1',
-    brokerName: 'Carlos Pereira',
-    agencyName: 'Imóveis Litoral',
-    propertyName: 'Edifício Vista Mar',
-    houseNumber: '101',
-    bedrooms: 3,
-    bathrooms: 2,
-    suites: 1,
-    lavabos: 1,
-    areaSize: 120,
-    price: 1200000,
-    paymentTerms: 'Entrada de 20% + Financiamento',
-    additionalFeatures: 'Piscina e academia no prédio.',
-    tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM', 'APARTAMENTO', 'NOVO_NA_SEMANA'],
-    categories: ['FR', 'VM'],
-    propertyType: 'APARTAMENTO',
-    status: 'NOVO_NA_SEMANA',
-    neighborhood: 'Centro',
-    brokerContact: 'carlos.p@email.com',
-    photoDriveLink: 'https://placehold.co/600x400.png',
-    address: 'Av. Beira Mar, 123'
-  },
-  {
-    id: 'mock-2',
-    brokerName: 'Ana Souza',
-    agencyName: 'Praia Imóveis',
-    propertyName: 'Casa de Veraneio',
-    houseNumber: '50',
-    bedrooms: 4,
-    bathrooms: 3,
-    suites: 2,
-    lavabos: 0,
-    areaSize: 250,
-    totalAreaSize: 400,
-    price: 2500000,
-    paymentTerms: 'À vista com 10% de desconto',
-    additionalFeatures: 'Amplo jardim com churrasqueira.',
-    tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis', 'M', 'CASA', 'DISPONIVEL'],
-    categories: ['M'],
-    propertyType: 'CASA',
-    status: 'DISPONIVEL',
-    neighborhood: 'Norte',
-    brokerContact: 'ana.s@email.com',
-  },
-  {
-    id: 'mock-3',
-    brokerName: 'Carlos Pereira',
-    agencyName: 'Imóveis Litoral',
-    propertyName: 'Residencial das Flores',
-    houseNumber: 'A-12',
-    bedrooms: 2,
-    bathrooms: 1,
-    suites: 1,
-    lavabos: 1,
-    areaSize: 85,
-    price: 850000,
-    paymentTerms: 'Sinal + parcelas mensais',
-    additionalFeatures: 'Salão de festas e playground.',
-    tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral', 'L', 'APARTAMENTO', 'ALTERADO'],
-    categories: ['L'],
-    propertyType: 'APARTAMENTO',
-    status: 'ALTERADO',
-    neighborhood: 'Sul'
-  },
-  {
-    id: 'mock-4',
-    brokerName: 'Fernanda Lima',
-    agencyName: 'Praia Imóveis',
-    propertyName: 'Loteamento Sol Poente',
-    houseNumber: 'Quadra C, Lote 15',
-    bedrooms: 0,
-    bathrooms: 0,
-    suites: 0,
-    lavabos: 0,
-    areaSize: 500,
-    price: 450000,
-    paymentTerms: 'Financiamento direto com a construtora',
-    additionalFeatures: 'Pronto para construir.',
-    tags: ['terreno', 'oportunidade', 'Oeste', 'Praia Imóveis', 'LOTE', 'DISPONIVEL'],
-    categories: [],
-    propertyType: 'LOTE',
-    status: 'DISPONIVEL',
-    neighborhood: 'Oeste'
-  },
-  {
-    id: 'mock-5',
-    brokerName: 'Carlos Pereira',
-    agencyName: 'Imóveis Litoral',
-    propertyName: 'Cobertura Duplex',
-    houseNumber: '2001',
-    bedrooms: 5,
-    bathrooms: 5,
-    suites: 5,
-    lavabos: 2,
-    areaSize: 350,
-    price: 5000000,
-    paymentTerms: 'Entrada de 30% + Financiamento',
-    additionalFeatures: 'Piscina privativa, vista panorâmica.',
-    tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM', 'MD', 'APARTAMENTO', 'VENDIDO_NA_SEMANA'],
-    categories: ['FR', 'VM', 'MD'],
-    propertyType: 'APARTAMENTO',
-    status: 'VENDIDO_NA_SEMANA',
-    neighborhood: 'Centro'
-  },
+    {
+        id: 'mock-1',
+        brokerName: 'Carlos Pereira',
+        agencyName: 'Imóveis Litoral',
+        propertyName: 'Edifício Vista Mar',
+        houseNumber: '101',
+        bedrooms: 3,
+        bathrooms: 2,
+        suites: 1,
+        lavabos: 1,
+        areaSize: 120,
+        price: 1200000,
+        paymentTerms: 'Entrada de 20% + Financiamento',
+        additionalFeatures: 'Piscina e academia no prédio.',
+        propertyType: 'APARTAMENTO',
+        status: 'NOVO_NA_SEMANA',
+        neighborhood: 'Centro',
+        categories: ['FR', 'VM'],
+        tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral', 'APARTAMENTO', 'NOVO_NA_SEMANA', 'FR', 'VM'],
+        brokerContact: 'carlos.p@email.com',
+        photoDriveLink: 'https://placehold.co/600x400.png',
+        address: 'Av. Beira Mar, 123'
+    },
+    {
+        id: 'mock-2',
+        brokerName: 'Ana Souza',
+        agencyName: 'Praia Imóveis',
+        propertyName: 'Casa de Veraneio',
+        houseNumber: '50',
+        bedrooms: 4,
+        bathrooms: 3,
+        suites: 2,
+        lavabos: 0,
+        areaSize: 250,
+        totalAreaSize: 400,
+        price: 2500000,
+        paymentTerms: 'À vista com 10% de desconto',
+        additionalFeatures: 'Amplo jardim com churrasqueira.',
+        propertyType: 'CASA',
+        status: 'DISPONIVEL',
+        neighborhood: 'Norte',
+        categories: ['M'],
+        tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis', 'CASA', 'DISPONIVEL', 'M'],
+        brokerContact: 'ana.s@email.com',
+    },
+    {
+        id: 'mock-3',
+        brokerName: 'Carlos Pereira',
+        agencyName: 'Imóveis Litoral',
+        propertyName: 'Residencial das Flores',
+        houseNumber: 'A-12',
+        bedrooms: 2,
+        bathrooms: 1,
+        suites: 1,
+        lavabos: 1,
+        areaSize: 85,
+        price: 850000,
+        paymentTerms: 'Sinal + parcelas mensais',
+        additionalFeatures: 'Salão de festas e playground.',
+        propertyType: 'APARTAMENTO',
+        status: 'ALTERADO',
+        neighborhood: 'Sul',
+        categories: ['L'],
+        tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral', 'APARTAMENTO', 'ALTERADO', 'L'],
+    },
+    {
+        id: 'mock-4',
+        brokerName: 'Fernanda Lima',
+        agencyName: 'Praia Imóveis',
+        propertyName: 'Loteamento Sol Poente',
+        houseNumber: 'Quadra C, Lote 15',
+        bedrooms: 0,
+        bathrooms: 0,
+        suites: 0,
+        lavabos: 0,
+        areaSize: 500,
+        price: 450000,
+        paymentTerms: 'Financiamento direto com a construtora',
+        additionalFeatures: 'Pronto para construir.',
+        propertyType: 'LOTE',
+        status: 'DISPONIVEL',
+        neighborhood: 'Oeste',
+        categories: [],
+        tags: ['terreno', 'oportunidade', 'Oeste', 'Praia Imóveis', 'LOTE', 'DISPONIVEL'],
+    },
+    {
+        id: 'mock-5',
+        brokerName: 'Carlos Pereira',
+        agencyName: 'Imóveis Litoral',
+        propertyName: 'Cobertura Duplex',
+        houseNumber: '2001',
+        bedrooms: 5,
+        bathrooms: 5,
+        suites: 5,
+        lavabos: 2,
+        areaSize: 350,
+        price: 5000000,
+        paymentTerms: 'Entrada de 30% + Financiamento',
+        additionalFeatures: 'Piscina privativa, vista panorâmica.',
+        propertyType: 'APARTAMENTO',
+        status: 'VENDIDO_NA_SEMANA',
+        neighborhood: 'Centro',
+        categories: ['FR', 'VM', 'MD'],
+        tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral', 'APARTAMENTO', 'VENDIDO_NA_SEMANA', 'FR', 'VM', 'MD'],
+    },
 ];
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
@@ -155,7 +155,7 @@ export function PageClient() {
     setIsClient(true);
     try {
       const storedProperties = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedProperties && storedProperties !== '[]') {
+      if (storedProperties && storedProperties !== '[]' && JSON.parse(storedProperties).length > 0) {
         setProperties(JSON.parse(storedProperties));
       } else {
         setProperties(mockProperties);
@@ -179,18 +179,21 @@ export function PageClient() {
   }, [properties, isClient, toast]);
 
   const addOrUpdateTags = (data: Omit<Property, 'id'>): string[] => {
-    let tags = data.tags || [];
+    let baseTags = data.tags || [];
     const fieldsToTag = [data.neighborhood, data.agencyName, data.propertyType, data.status];
+    
     fieldsToTag.forEach(field => {
-        if (field && !tags.includes(field)) {
-            tags.push(field);
+        if (field && !baseTags.includes(field)) {
+            baseTags.push(field);
         }
     });
 
     if (data.categories) {
-      tags = [...new Set([...tags, ...data.categories])];
+      baseTags = [...baseTags, ...data.categories];
     }
-    return tags;
+    
+    // Return a unique set of tags
+    return [...new Set(baseTags)];
   };
 
   const addProperty = (data: Omit<Property, 'id'>) => {

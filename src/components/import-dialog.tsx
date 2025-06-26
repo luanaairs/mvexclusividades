@@ -11,11 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { type Property, type PropertyCategory, type PropertyType, type PropertyStatus } from "@/types";
-import { extractPropertyDetails } from "@/app/actions";
+import { performOcr } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileUp, Trash2 } from "lucide-react";
-import { type ExtractPropertyDetailsOutput, type PropertyDetails } from "@/ai/flows/extract-property-details";
+import { Loader2, FileUp, Trash2, PlusCircle } from "lucide-react";
+import { type OcrOutput } from "@/ai/flows/extract-property-details";
 import { ScrollArea } from "./ui/scroll-area";
+import { Textarea } from "./ui/textarea";
 
 const propertySchema = z.object({
   brokerName: z.string().min(1, { message: "O nome do corretor é obrigatório." }),
@@ -48,6 +49,32 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const defaultPropertyValues = {
+  brokerName: '',
+  agencyName: '',
+  propertyName: '',
+  houseNumber: '',
+  bedrooms: 0,
+  bathrooms: 0,
+  suites: 0,
+  lavabos: 0,
+  areaSize: 0,
+  totalAreaSize: '',
+  price: 0,
+  paymentTerms: '',
+  additionalFeatures: '',
+  tags: '',
+  propertyType: 'APARTAMENTO' as PropertyType,
+  categories: '',
+  status: 'DISPONIVEL' as PropertyStatus,
+  brokerContact: '',
+  photoDriveLink: '',
+  extraMaterialLink: '',
+  address: '',
+  neighborhood: '',
+};
+
+
 interface ImportDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -72,7 +99,7 @@ const STATUSES: { value: PropertyStatus; label: string }[] = [
 
 export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogProps) {
   const [isPending, startTransition] = useTransition();
-  const [extractedData, setExtractedData] = useState<ExtractPropertyDetailsOutput | null>(null);
+  const [ocrText, setOcrText] = useState<string | null>(null);
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -82,13 +109,13 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
     }
   });
   
-  const { fields, remove } = useFieldArray({
+  const { fields, remove, append } = useFieldArray({
     control: form.control,
     name: "properties"
   });
 
   const resetDialog = () => {
-    setExtractedData(null);
+    setOcrText(null);
     form.reset({ properties: [] });
   }
 
@@ -100,38 +127,11 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
     reader.readAsDataURL(file);
     reader.onload = () => {
       startTransition(async () => {
-        const result = await extractPropertyDetails({ documentDataUri: reader.result as string });
-        if (result.success && result.data && result.data.properties) {
-          if (result.data.properties.length === 0) {
-              toast({ variant: "default", title: "Nenhum imóvel encontrado", description: "Não foi possível identificar imóveis no documento." });
-              return;
-          }
-          setExtractedData(result.data);
-          const formattedProperties = result.data.properties.map((p: PropertyDetails) => ({
-            brokerName: p.brokerName || '',
-            agencyName: p.agencyName || '',
-            propertyName: p.propertyName || '',
-            houseNumber: p.houseNumber || '',
-            bedrooms: p.bedrooms ?? 0,
-            bathrooms: p.bathrooms ?? 0,
-            suites: p.suites ?? 0,
-            lavabos: p.lavabos ?? 0,
-            areaSize: p.areaSize ?? 0,
-            totalAreaSize: '',
-            price: p.price ?? 0,
-            paymentTerms: p.paymentTerms || '',
-            additionalFeatures: p.additionalFeatures || '',
-            tags: '',
-            propertyType: p.propertyType || 'OUTRO',
-            categories: p.categories?.join(', ') || '',
-            status: 'NOVO_NA_SEMANA' as PropertyStatus,
-            brokerContact: p.brokerContact || '',
-            photoDriveLink: p.photoDriveLink || '',
-            extraMaterialLink: p.extraMaterialLink || '',
-            address: p.address || '',
-            neighborhood: p.neighborhood || '',
-          }));
-          form.reset({ properties: formattedProperties });
+        const result = await performOcr({ documentDataUri: reader.result as string });
+        if (result.success && result.data) {
+          setOcrText(result.data.text);
+          // Add one empty row to start with
+          form.reset({ properties: [defaultPropertyValues] });
         } else {
           toast({ variant: "destructive", title: "Erro na Importação", description: result.error });
           onOpenChange(false);
@@ -165,107 +165,91 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
       if(!open) resetDialog();
       onOpenChange(open);
     }}>
-      <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw]">
+      <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw]">
         <DialogHeader>
           <DialogTitle>Importar Imóveis de Documento</DialogTitle>
           <DialogDescription>
-            {extractedData ? "Confira os dados extraídos, edite se necessário e adicione à sua lista." : "Selecione um arquivo .docx, .pdf ou imagem para extrair os dados dos imóveis."}
+            {ocrText ? "Copie as informações do texto extraído para a tabela de imóveis." : "Selecione um arquivo .docx, .pdf ou imagem para extrair o texto com OCR."}
           </DialogDescription>
         </DialogHeader>
         {isPending ? (
           <div className="flex flex-col items-center justify-center gap-4 py-16">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="text-muted-foreground">Analisando documento... Isso pode levar alguns segundos.</p>
+            <p className="text-muted-foreground">Extraindo texto do documento...</p>
           </div>
-        ) : extractedData ? (
+        ) : ocrText !== null ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)}>
-              <ScrollArea className="h-[60vh] border rounded-md">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Empreendimento</TableHead>
-                      <TableHead className="w-[80px]">Nº</TableHead>
-                      <TableHead className="w-[100px]">Preço (R$)</TableHead>
-                      <TableHead className="w-[80px]">Quartos</TableHead>
-                      <TableHead className="w-[80px]">Suítes</TableHead>
-                      <TableHead className="w-[100px]">Área (m²)</TableHead>
-                      <TableHead className="w-[150px]">Tipo</TableHead>
-                      <TableHead className="w-[150px]">Status</TableHead>
-                      <TableHead className="w-[40px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fields.map((field, index) => (
-                      <TableRow key={field.id}>
-                        <TableCell>
-                          <FormField control={form.control} name={`properties.${index}.propertyName`} render={({ field }) => ( <Input {...field} /> )} />
-                        </TableCell>
-                        <TableCell>
-                          <FormField control={form.control} name={`properties.${index}.houseNumber`} render={({ field }) => ( <Input {...field} /> )} />
-                        </TableCell>
-                        <TableCell>
-                          <FormField control={form.control} name={`properties.${index}.price`} render={({ field }) => ( <Input type="number" {...field} /> )} />
-                        </TableCell>
-                        <TableCell>
-                          <FormField control={form.control} name={`properties.${index}.bedrooms`} render={({ field }) => ( <Input type="number" {...field} /> )} />
-                        </TableCell>
-                        <TableCell>
-                          <FormField control={form.control} name={`properties.${index}.suites`} render={({ field }) => ( <Input type="number" {...field} /> )} />
-                        </TableCell>
-                        <TableCell>
-                          <FormField control={form.control} name={`properties.${index}.areaSize`} render={({ field }) => ( <Input type="number" {...field} /> )} />
-                        </TableCell>
-                        <TableCell>
-                           <FormField
-                              control={form.control}
-                              name={`properties.${index}.propertyType`}
-                              render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecione..." />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {PROPERTY_TYPES.map(type => (
-                                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                        </TableCell>
-                         <TableCell>
-                           <FormField
-                              control={form.control}
-                              name={`properties.${index}.status`}
-                              render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Selecione..." />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {STATUSES.map(stat => (
-                                      <SelectItem key={stat.value} value={stat.value}>{stat.label}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                        </TableCell>
-                        <TableCell>
-                           <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </ScrollArea>
+              <div className="grid md:grid-cols-2 gap-6">
+                 <div>
+                    <h3 className="font-semibold mb-2 text-sm text-muted-foreground">Texto Extraído (OCR)</h3>
+                    <ScrollArea className="h-[60vh] border rounded-md p-2">
+                        <pre className="text-xs whitespace-pre-wrap font-sans">{ocrText}</pre>
+                    </ScrollArea>
+                </div>
+                <div>
+                   <div className="flex justify-between items-center mb-2">
+                         <h3 className="font-semibold text-sm text-muted-foreground">Imóveis para Adicionar</h3>
+                         <Button type="button" size="sm" variant="outline" onClick={() => append(defaultPropertyValues)}>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Linha
+                        </Button>
+                    </div>
+                  <ScrollArea className="h-[calc(60vh-40px)] border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[150px]">Empreendimento</TableHead>
+                          <TableHead className="w-[60px]">Nº</TableHead>
+                          <TableHead className="w-[100px]">Preço</TableHead>
+                          <TableHead className="w-[60px]">Q</TableHead>
+                          <TableHead className="w-[60px]">S</TableHead>
+                          <TableHead className="w-[80px]">Área</TableHead>
+                          <TableHead className="w-[120px]">Tipo</TableHead>
+                          <TableHead className="w-[150px]">Status</TableHead>
+                          <TableHead className="w-[40px]"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {fields.map((field, index) => (
+                          <TableRow key={field.id}>
+                            <TableCell><FormField control={form.control} name={`properties.${index}.propertyName`} render={({ field }) => ( <Input {...field} /> )} /></TableCell>
+                            <TableCell><FormField control={form.control} name={`properties.${index}.houseNumber`} render={({ field }) => ( <Input {...field} /> )} /></TableCell>
+                            <TableCell><FormField control={form.control} name={`properties.${index}.price`} render={({ field }) => ( <Input type="number" {...field} /> )} /></TableCell>
+                            <TableCell><FormField control={form.control} name={`properties.${index}.bedrooms`} render={({ field }) => ( <Input type="number" {...field} /> )} /></TableCell>
+                            <TableCell><FormField control={form.control} name={`properties.${index}.suites`} render={({ field }) => ( <Input type="number" {...field} /> )} /></TableCell>
+                            <TableCell><FormField control={form.control} name={`properties.${index}.areaSize`} render={({ field }) => ( <Input type="number" {...field} /> )} /></TableCell>
+                            <TableCell>
+                               <FormField control={form.control} name={`properties.${index}.propertyType`} render={({ field }) => (
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {PROPERTY_TYPES.map(type => (<SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>))}
+                                    </SelectContent>
+                                    </Select>
+                                )}/>
+                            </TableCell>
+                            <TableCell>
+                               <FormField control={form.control} name={`properties.${index}.status`} render={({ field }) => (
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {STATUSES.map(stat => (<SelectItem key={stat.value} value={stat.value}>{stat.label}</SelectItem>))}
+                                    </SelectContent>
+                                    </Select>
+                                )}/>
+                            </TableCell>
+                            <TableCell>
+                               <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                </div>
+              </div>
+
               <DialogFooter className="mt-6 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <Button type="submit" disabled={fields.length === 0}>Adicionar {fields.length} Imóve{fields.length > 1 ? 'is' : 'l'} à Tabela</Button>
@@ -283,7 +267,7 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
                 <p className="mb-2 text-sm text-muted-foreground">
                   <span className="font-semibold text-primary">Clique para carregar</span> ou arraste e solte
                 </p>
-                <p className="text-xs text-muted-foreground">DOCX, PDF ou Imagem (com um ou mais imóveis)</p>
+                <p className="text-xs text-muted-foreground">DOCX, PDF ou Imagem</p>
               </div>
               <Input id="file-upload" type="file" className="hidden" accept=".docx,.pdf,image/*" onChange={handleFileChange} />
             </label>

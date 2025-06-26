@@ -1,12 +1,12 @@
 'use server';
-import { extractPropertyDetails as extractPropertyDetailsFlow, type ExtractPropertyDetailsInput } from "@/ai/flows/extract-property-details";
+import { extractTextFromDocument as ocrFlow, type OcrInput } from "@/ai/flows/extract-property-details";
 
-export async function extractPropertyDetails(input: ExtractPropertyDetailsInput) {
+export async function performOcr(input: OcrInput) {
     try {
-        const result = await extractPropertyDetailsFlow(input);
+        const result = await ocrFlow(input);
         return { success: true, data: result };
     } catch (error) {
-        console.error("Error extracting property details:", error);
-        return { success: false, error: "Falha ao extrair detalhes do documento. Verifique o formato do arquivo e tente novamente." };
+        console.error("Error performing OCR:", error);
+        return { success: false, error: "Falha ao extrair texto do documento. Verifique o arquivo e tente novamente." };
     }
 }
