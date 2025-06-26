@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { type Property } from "@/types";
+import { type Property, type PropertyStatus } from "@/types";
 import {
   Table,
   TableBody,
@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent } from './ui/card';
+import { cn } from '@/lib/utils';
 
 interface PropertyTableProps {
   properties: Property[];
@@ -31,12 +32,33 @@ interface PropertyTableProps {
   onDelete: (id: string) => void;
 }
 
+const formatCurrency = (value: number) => {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const formatPropertyType = (type: string) => {
+    const lower = type.toLowerCase();
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+const renderStatusBadge = (status: PropertyStatus) => {
+  switch (status) {
+    case 'NOVO_NA_SEMANA':
+      return <Badge variant="default">Novo</Badge>;
+    case 'ALTERADO':
+      return <Badge variant="secondary">Alterado</Badge>;
+    case 'VENDIDO_NA_SEMANA':
+    case 'VENDIDO_NO_MES':
+      return <Badge variant="destructive">Vendido</Badge>;
+    default:
+      const exhaustiveCheck: never = status;
+      return null;
+  }
+};
+
+
 export function PropertyTable({ properties, onEdit, onDelete }: PropertyTableProps) {
   const [deleteCandidate, setDeleteCandidate] = useState<Property | null>(null);
-
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
   
   if (properties.length === 0) {
     return (
@@ -56,9 +78,10 @@ export function PropertyTable({ properties, onEdit, onDelete }: PropertyTablePro
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">Corretor/Empresa</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Empreendimento</TableHead>
-              <TableHead className="text-center">Q/B/S</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead className="text-center">Q/B/S/L</TableHead>
               <TableHead className="text-center">Área (m²)</TableHead>
               <TableHead>Preço</TableHead>
               <TableHead>Tags</TableHead>
@@ -67,14 +90,19 @@ export function PropertyTable({ properties, onEdit, onDelete }: PropertyTablePro
           </TableHeader>
           <TableBody>
             {properties.map((property) => (
-              <TableRow key={property.id}>
-                <TableCell className="font-medium">{property.agentName}</TableCell>
-                <TableCell>{property.propertyName}</TableCell>
-                <TableCell className="text-center">{`${property.bedrooms}/${property.bathrooms}/${property.suites}`}</TableCell>
+              <TableRow 
+                key={property.id} 
+                className={cn((property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through text-muted-foreground/80')}
+              >
+                <TableCell>{renderStatusBadge(property.status)}</TableCell>
+                <TableCell className="font-medium">{property.propertyName} - {property.houseNumber}</TableCell>
+                <TableCell>{formatPropertyType(property.propertyType)}</TableCell>
+                <TableCell className="text-center">{`${property.bedrooms}/${property.bathrooms}/${property.suites}/${property.lavabos}`}</TableCell>
                 <TableCell className="text-center">{property.areaSize}{property.totalAreaSize ? ` / ${property.totalAreaSize}`: ''}</TableCell>
                 <TableCell>{formatCurrency(property.price)}</TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
+                    {property.category && <Badge variant="outline">{property.category.replace(/_/g, ' ')}</Badge>}
                     {property.tags.map((tag) => (
                       <Badge key={tag} variant="secondary">{tag}</Badge>
                     ))}

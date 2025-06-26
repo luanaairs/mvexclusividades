@@ -1,6 +1,7 @@
 import { type Property } from "@/types";
 
 function escapeCsvCell(cellData: string): string {
+  if (!cellData) return '""';
   if (cellData.includes(',')) {
     return `"${cellData.replace(/"/g, '""')}"`;
   }
@@ -9,7 +10,8 @@ function escapeCsvCell(cellData: string): string {
 
 export function exportToCsv(properties: Property[]) {
   const headers = [
-    "Corretor/Empresa", "Empreendimento", "Quartos", "Banheiros", "Suítes", 
+    "Corretor/Empresa", "Empreendimento", "Número", "Tipo", "Categoria", "Status",
+    "Quartos", "Banheiros", "Suítes", "Lavabos",
     "Área Privativa (m²)", "Área Total (m²)", "Preço", "Condições de Pagamento", 
     "Características Adicionais", "Tags"
   ];
@@ -17,9 +19,14 @@ export function exportToCsv(properties: Property[]) {
   const rows = properties.map(p => [
     escapeCsvCell(p.agentName),
     escapeCsvCell(p.propertyName),
+    escapeCsvCell(p.houseNumber),
+    escapeCsvCell(p.propertyType),
+    escapeCsvCell(p.category || ''),
+    escapeCsvCell(p.status),
     p.bedrooms.toString(),
     p.bathrooms.toString(),
     p.suites.toString(),
+    p.lavabos.toString(),
     p.areaSize.toString(),
     p.totalAreaSize?.toString() || '',
     p.price.toString(),
@@ -55,9 +62,14 @@ export function exportToWord(properties: Property[]) {
           <tr style="background-color: #f2f2f2;">
             <th style="padding: 8px;">Corretor/Empresa</th>
             <th style="padding: 8px;">Empreendimento</th>
+            <th style="padding: 8px;">Número</th>
+            <th style="padding: 8px;">Tipo</th>
+            <th style="padding: 8px;">Categoria</th>
+            <th style="padding: 8px;">Status</th>
             <th style="padding: 8px;">Quartos</th>
             <th style="padding: 8px;">Banheiros</th>
             <th style="padding: 8px;">Suítes</th>
+            <th style="padding: 8px;">Lavabos</th>
             <th style="padding: 8px;">Área Privativa (m²)</th>
             <th style="padding: 8px;">Área Total (m²)</th>
             <th style="padding: 8px;">Preço</th>
@@ -71,9 +83,14 @@ export function exportToWord(properties: Property[]) {
             <tr>
               <td style="padding: 8px;">${p.agentName}</td>
               <td style="padding: 8px;">${p.propertyName}</td>
+              <td style="padding: 8px;">${p.houseNumber}</td>
+              <td style="padding: 8px;">${p.propertyType}</td>
+              <td style="padding: 8px;">${p.category || ''}</td>
+              <td style="padding: 8px;">${p.status}</td>
               <td style="padding: 8px;">${p.bedrooms}</td>
               <td style="padding: 8px;">${p.bathrooms}</td>
               <td style="padding: 8px;">${p.suites}</td>
+              <td style="padding: 8px;">${p.lavabos}</td>
               <td style="padding: 8px;">${p.areaSize}</td>
               <td style="padding: 8px;">${p.totalAreaSize || ''}</td>
               <td style="padding: 8px;">${p.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>

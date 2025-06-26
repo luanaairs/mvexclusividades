@@ -4,6 +4,31 @@ import { useFormContext } from "react-hook-form";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { type PropertyCategory, type PropertyType, type PropertyStatus } from "@/types";
+
+const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
+  { value: 'APARTAMENTO', label: 'Apartamento' },
+  { value: 'CASA', label: 'Casa' },
+  { value: 'OUTRO', label: 'Outro' },
+];
+
+const CATEGORIES: { value: PropertyCategory; label: string }[] = [
+    { value: 'FRENTE', label: 'Frente' },
+    { value: 'LATERAL', label: 'Lateral' },
+    { value: 'FUNDOS', label: 'Fundos' },
+    { value: 'DECORADO', label: 'Decorado' },
+    { value: 'MOBILIADO', label: 'Mobiliado' },
+    { value: 'COM_VISTA_PARA_O_MAR', label: 'Com Vista para o Mar' },
+];
+
+const STATUSES: { value: PropertyStatus; label: string }[] = [
+  { value: 'NOVO_NA_SEMANA', label: 'Novo na Semana (Verde)' },
+  { value: 'ALTERADO', label: 'Alterado (Amarelo)' },
+  { value: 'VENDIDO_NA_SEMANA', label: 'Vendido na Semana (Vermelho)' },
+  { value: 'VENDIDO_NO_MES', label: 'Vendido no Mês (Vermelho)' },
+];
+
 
 export function PropertyFormFields() {
   const { control } = useFormContext();
@@ -23,20 +48,35 @@ export function PropertyFormFields() {
           </FormItem>
         )}
       />
-      <FormField
-        control={control}
-        name="propertyName"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nome do Empreendimento</FormLabel>
-            <FormControl>
-              <Input placeholder="Ex: Edifício Sol Nascente" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
+         <FormField
+          control={control}
+          name="propertyName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome do Empreendimento</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: Edifício Sol Nascente" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="houseNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nº da Casa/Apto</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: 101" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+      <div className="grid grid-cols-4 gap-4">
         <FormField
           control={control}
           name="bedrooms"
@@ -69,6 +109,19 @@ export function PropertyFormFields() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Suítes</FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="1" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="lavabos"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Lavabos</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="1" {...field} />
               </FormControl>
@@ -131,6 +184,73 @@ export function PropertyFormFields() {
           </FormItem>
         )}
       />
+      <FormField
+          control={control}
+          name="propertyType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Imóvel</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {PROPERTY_TYPES.map(type => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoria (Opcional)</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">Nenhuma</SelectItem>
+                  {CATEGORIES.map(cat => (
+                    <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name="status"
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel>Status</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status do imóvel" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {STATUSES.map(stat => (
+                    <SelectItem key={stat.value} value={stat.value}>{stat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       <FormField
         control={control}
         name="additionalFeatures"

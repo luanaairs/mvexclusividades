@@ -23,13 +23,16 @@ export type ExtractPropertyDetailsInput = z.infer<typeof ExtractPropertyDetailsI
 const ExtractPropertyDetailsOutputSchema = z.object({
   agentName: z.string().describe('The name of the agent or company listing the property.'),
   propertyName: z.string().describe('The name of the property or development.'),
+  houseNumber: z.string().describe('The house or apartment number.').optional(),
   bedrooms: z.number().describe('The number of bedrooms in the property.'),
   bathrooms: z.number().describe('The number of bathrooms in the property.'),
   suites: z.number().describe('The number of suites in the property.'),
+  lavabos: z.number().describe('The number of lavabos (washrooms without shower/bath).').optional(),
   areaSize: z.number().describe('The area size of the property in square meters.'),
   price: z.number().describe('The price of the property.'),
   paymentTerms: z.string().describe('The payment terms for the property.'),
   additionalFeatures: z.string().describe('Any additional features of the property.'),
+  propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO']).describe('The type of property (e.g., CASA, APARTAMENTO).').optional(),
 });
 export type ExtractPropertyDetailsOutput = z.infer<typeof ExtractPropertyDetailsOutputSchema>;
 
@@ -48,13 +51,16 @@ You will receive a document (like a PDF, DOCX, or an image) containing property 
 Extract the following information:
 - Agent/Company Name: The name of the agent or company listing the property.
 - Property Name: The name of the property or development.
+- House/Apartment Number: The specific number of the unit.
 - Number of Bedrooms: The number of bedrooms in the property.
 - Number of Bathrooms: The number of bathrooms in the property.
 - Number of Suites: The number of suites in the property.
+- Number of Lavabos: The number of washrooms (toilets without shower).
 - Area Size: The area size of the property in square meters.
 - Price: The price of the property.
 - Payment Terms: The payment terms for the property.
 - Additional Features: Any additional features of the property.
+- Property Type: The type of property (e.g., CASA, APARTAMENTO, OUTRO).
 
 Here is the document data:
 {{media url=documentDataUri}}

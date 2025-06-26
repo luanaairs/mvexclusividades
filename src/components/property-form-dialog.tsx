@@ -13,16 +13,22 @@ import { useEffect } from "react";
 const formSchema = z.object({
   agentName: z.string().min(1, { message: "O nome do corretor/empresa é obrigatório." }),
   propertyName: z.string().min(1, { message: "O nome do empreendimento é obrigatório." }),
+  houseNumber: z.string().min(1, { message: "O número é obrigatório." }),
   bedrooms: z.coerce.number().min(0, "O valor não pode ser negativo."),
   bathrooms: z.coerce.number().min(0, "O valor não pode ser negativo."),
   suites: z.coerce.number().min(0, "O valor não pode ser negativo."),
+  lavabos: z.coerce.number().min(0, "O valor não pode ser negativo."),
   areaSize: z.coerce.number().positive("A área privativa deve ser um número positivo."),
   totalAreaSize: z.coerce.number().positive("A área total deve ser um número positivo.").optional().or(z.literal('')),
   price: z.coerce.number().positive("O preço deve ser um número positivo."),
   paymentTerms: z.string().min(1, { message: "As condições de pagamento são obrigatórias." }),
   additionalFeatures: z.string().optional(),
   tags: z.string().optional(),
+  propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
+  category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).optional().or(z.literal('')),
+  status: z.enum(['NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
 });
+
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -33,53 +39,52 @@ interface PropertyFormDialogProps {
   property?: Property | null;
 }
 
+const defaultValues: FormValues = {
+    agentName: '',
+    propertyName: '',
+    houseNumber: '',
+    bedrooms: 0,
+    bathrooms: 0,
+    suites: 0,
+    lavabos: 0,
+    areaSize: 0,
+    totalAreaSize: '',
+    price: 0,
+    paymentTerms: '',
+    additionalFeatures: '',
+    tags: '',
+    propertyType: 'APARTAMENTO',
+    category: '',
+    status: 'NOVO_NA_SEMANA'
+};
+
 export function PropertyFormDialog({ isOpen, onOpenChange, onSubmit, property }: PropertyFormDialogProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      agentName: '',
-      propertyName: '',
-      bedrooms: 0,
-      bathrooms: 0,
-      suites: 0,
-      areaSize: 0,
-      totalAreaSize: '',
-      price: 0,
-      paymentTerms: '',
-      additionalFeatures: '',
-      tags: '',
-    }
+    defaultValues: defaultValues
   });
 
   useEffect(() => {
-    if (property) {
-      form.reset({
-        ...property,
-        totalAreaSize: property.totalAreaSize || '',
-        tags: property.tags.join(', '),
-      });
-    } else {
-      form.reset({
-        agentName: '',
-        propertyName: '',
-        bedrooms: 0,
-        bathrooms: 0,
-        suites: 0,
-        areaSize: 0,
-        totalAreaSize: '',
-        price: 0,
-        paymentTerms: '',
-        additionalFeatures: '',
-        tags: '',
-      });
+    if (isOpen) {
+      if (property) {
+        form.reset({
+          ...property,
+          totalAreaSize: property.totalAreaSize || '',
+          tags: property.tags.join(', '),
+          category: property.category || '',
+        });
+      } else {
+        form.reset(defaultValues);
+      }
     }
   }, [property, form, isOpen]);
 
   const handleFormSubmit = (data: FormValues) => {
-    const propertyData = {
+    const propertyData: Omit<Property, 'id'> = {
       ...data,
       totalAreaSize: Number(data.totalAreaSize) || undefined,
       tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+      category: data.category || undefined,
     };
     onSubmit(propertyData);
     onOpenChange(false);
