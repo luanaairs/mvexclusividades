@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { PlusCircle, FileUp, Download } from "lucide-react";
+import Image from "next/image";
 
 interface PageHeaderProps {
   onAdd: () => void;
@@ -17,6 +18,7 @@ export function PageHeader({ onAdd, onImport, onExportCsv, onExportWord, hasProp
     <header className="bg-card shadow-sm rounded-lg p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-3 text-2xl font-bold text-primary">
+          <Image src="/logo.png" alt="MV Broker Logo" width={48} height={48} className="rounded-lg" />
           <h1 className="font-headline">Exclusividades</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">

@@ -23,9 +23,6 @@ export default function RootLayout({
         <div className="flex-grow">
           {children}
         </div>
-        <footer className="py-4 text-center text-sm text-muted-foreground">
-          <p>te amo, meu amor, bom trabalho!</p>
-        </footer>
         <Toaster />
       </body>
     </html>
