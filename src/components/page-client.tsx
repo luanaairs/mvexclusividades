@@ -12,6 +12,7 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { X } from 'lucide-react';
+import { PropertyDetailsDialog } from './property-details-dialog';
 
 const LOCAL_STORAGE_KEY = 'exclusivity-list';
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
@@ -121,6 +122,7 @@ const mockProperties: Property[] = [
         neighborhood: 'Centro',
         categories: ['FR', 'VM', 'MD'],
         tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral', 'APARTAMENTO', 'VENDIDO_NA_SEMANA', 'FR', 'VM', 'MD'],
+        extraMaterialLink: 'https://placehold.co/600x400.png',
     },
 ];
 
@@ -146,6 +148,7 @@ export function PageClient() {
   const [isAddEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
+  const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
   
@@ -233,6 +236,10 @@ export function PageClient() {
   const handleEditClick = (property: Property) => {
     setEditingProperty(property);
     setAddEditDialogOpen(true);
+  };
+
+  const handleViewDetailsClick = (property: Property) => {
+    setViewingProperty(property);
   };
   
   const handleAddClick = () => {
@@ -350,6 +357,7 @@ export function PageClient() {
             properties={sortedProperties}
             onEdit={handleEditClick}
             onDelete={deleteProperty}
+            onViewDetails={handleViewDetailsClick}
             requestSort={requestSort}
             sortConfig={sortConfig}
           />
@@ -373,6 +381,14 @@ export function PageClient() {
         isOpen={isImportDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImport={addMultipleProperties}
+      />
+
+      <PropertyDetailsDialog
+        isOpen={!!viewingProperty}
+        onOpenChange={(open) => {
+          if (!open) setViewingProperty(null);
+        }}
+        property={viewingProperty}
       />
     </div>
   );

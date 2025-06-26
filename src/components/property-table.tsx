@@ -33,6 +33,7 @@ interface PropertyTableProps {
   properties: Property[];
   onEdit: (property: Property) => void;
   onDelete: (id: string) => void;
+  onViewDetails: (property: Property) => void;
   requestSort: (key: SortableKeys) => void;
   sortConfig: { key: SortableKeys; direction: 'ascending' | 'descending' } | null;
 }
@@ -63,7 +64,7 @@ const renderStatusBadge = (status: PropertyStatus) => {
   }
 };
 
-export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortConfig }: PropertyTableProps) {
+export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, requestSort, sortConfig }: PropertyTableProps) {
   const [deleteCandidate, setDeleteCandidate] = useState<Property | null>(null);
 
   const getSortIcon = (name: SortableKeys) => {
@@ -128,7 +129,12 @@ export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortC
                   className={cn((property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through text-muted-foreground/80')}
                 >
                   <TableCell>{renderStatusBadge(property.status)}</TableCell>
-                  <TableCell className="font-medium">{property.propertyName} - {property.houseNumber}</TableCell>
+                  <TableCell 
+                    className="font-medium cursor-pointer hover:underline"
+                    onClick={() => onViewDetails(property)}
+                  >
+                    {property.propertyName} - {property.houseNumber}
+                  </TableCell>
                   <TableCell>{formatPropertyType(property.propertyType)}</TableCell>
                   <TableCell className="text-center">{`${property.bedrooms}/${property.bathrooms}/${property.suites}/${property.lavabos}`}</TableCell>
                   <TableCell className="text-center">{property.areaSize}{property.totalAreaSize ? ` / ${property.totalAreaSize}`: ''}</TableCell>
@@ -163,34 +169,36 @@ export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortC
       <div className="md:hidden mt-4 space-y-4">
         {properties.map((property) => (
             <Card key={property.id} className={cn((property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'opacity-60')}>
-              <CardHeader>
-                  <div className="flex justify-between items-start">
-                      <div>
-                          <CardTitle className={cn("text-lg", (property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through')}>
-                            {property.propertyName} - {property.houseNumber}
-                          </CardTitle>
-                          <CardDescription>{formatPropertyType(property.propertyType)}</CardDescription>
-                      </div>
-                      {renderStatusBadge(property.status)}
-                  </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  <div className={cn("text-2xl font-bold text-primary", (property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through')}>
-                      {formatCurrency(property.price)}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2"><BedDouble className="h-4 w-4" /> <span>{property.bedrooms} Quartos</span></div>
-                      <div className="flex items-center gap-2"><Bath className="h-4 w-4" /> <span>{property.bathrooms} Banheiros</span></div>
-                      <div className="flex items-center gap-2"><CarFront className="h-4 w-4" /> <span>{property.suites} Suítes</span></div>
-                      <div className="flex items-center gap-2"><SquareStack className="h-4 w-4" /> <span>{property.areaSize}m²</span></div>
-                  </div>
-                  <Separator />
-                  <div className="flex flex-wrap gap-2">
-                    {property.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">{tag}</Badge>
-                    ))}
-                  </div>
-              </CardContent>
+              <div onClick={() => onViewDetails(property)} className="cursor-pointer">
+                <CardHeader>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className={cn("text-lg", (property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through')}>
+                              {property.propertyName} - {property.houseNumber}
+                            </CardTitle>
+                            <CardDescription>{formatPropertyType(property.propertyType)}</CardDescription>
+                        </div>
+                        {renderStatusBadge(property.status)}
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className={cn("text-2xl font-bold text-primary", (property.status === 'VENDIDO_NA_SEMANA' || property.status === 'VENDIDO_NO_MES') && 'line-through')}>
+                        {formatCurrency(property.price)}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2"><BedDouble className="h-4 w-4" /> <span>{property.bedrooms} Quartos</span></div>
+                        <div className="flex items-center gap-2"><Bath className="h-4 w-4" /> <span>{property.bathrooms} Banheiros</span></div>
+                        <div className="flex items-center gap-2"><CarFront className="h-4 w-4" /> <span>{property.suites} Suítes</span></div>
+                        <div className="flex items-center gap-2"><SquareStack className="h-4 w-4" /> <span>{property.areaSize}m²</span></div>
+                    </div>
+                    <Separator />
+                    <div className="flex flex-wrap gap-2">
+                      {property.tags.map((tag) => (
+                          <Badge key={tag} variant="secondary">{tag}</Badge>
+                      ))}
+                    </div>
+                </CardContent>
+              </div>
               <CardFooter className="flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={() => onEdit(property)}>
                     <Edit className="h-4 w-4 mr-2" />
