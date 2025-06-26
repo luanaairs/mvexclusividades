@@ -21,12 +21,12 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
 ];
 
 const CATEGORIES: { value: PropertyCategory; label: string }[] = [
-    { value: 'FR', label: 'Frente' },
-    { value: 'L', label: 'Lateral' },
-    { value: 'FU', label: 'Fundos' },
-    { value: 'M', label: 'Mobiliado' },
-    { value: 'MD', label: 'Decorado' },
-    { value: 'VM', label: 'Com Vista para o Mar' },
+    { value: 'FR', label: 'FR' },
+    { value: 'L', label: 'L' },
+    { value: 'FU', label: 'FU' },
+    { value: 'M', label: 'M' },
+    { value: 'MD', label: 'MD' },
+    { value: 'VM', label: 'VM' },
 ];
 
 const STATUSES: { value: PropertyStatus; label: string }[] = [
@@ -281,7 +281,7 @@ export function PropertyFormFields() {
                                                 />
                                             </FormControl>
                                             <FormLabel className="font-normal">
-                                                {category.label} ({category.value})
+                                                {category.label}
                                             </FormLabel>
                                         </FormItem>
                                     ))}

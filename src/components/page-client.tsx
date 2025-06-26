@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { type Property } from '@/types';
+import { type Property, type PropertyStatus, type PropertyType } from '@/types';
 import { PageHeader } from './page-header';
 import { PropertyTable } from './property-table';
 import { PropertyFormDialog } from './property-form-dialog';
@@ -31,7 +31,7 @@ const mockProperties: Property[] = [
     price: 1200000,
     paymentTerms: 'Entrada de 20% + Financiamento',
     additionalFeatures: 'Piscina e academia no prédio.',
-    tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM'],
+    tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM', 'APARTAMENTO', 'NOVO_NA_SEMANA'],
     categories: ['FR', 'VM'],
     propertyType: 'APARTAMENTO',
     status: 'NOVO_NA_SEMANA',
@@ -55,7 +55,7 @@ const mockProperties: Property[] = [
     price: 2500000,
     paymentTerms: 'À vista com 10% de desconto',
     additionalFeatures: 'Amplo jardim com churrasqueira.',
-    tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis', 'M'],
+    tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis', 'M', 'CASA', 'DISPONIVEL'],
     categories: ['M'],
     propertyType: 'CASA',
     status: 'DISPONIVEL',
@@ -76,7 +76,7 @@ const mockProperties: Property[] = [
     price: 850000,
     paymentTerms: 'Sinal + parcelas mensais',
     additionalFeatures: 'Salão de festas e playground.',
-    tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral', 'L'],
+    tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral', 'L', 'APARTAMENTO', 'ALTERADO'],
     categories: ['L'],
     propertyType: 'APARTAMENTO',
     status: 'ALTERADO',
@@ -96,7 +96,7 @@ const mockProperties: Property[] = [
     price: 450000,
     paymentTerms: 'Financiamento direto com a construtora',
     additionalFeatures: 'Pronto para construir.',
-    tags: ['terreno', 'oportunidade', 'Oeste', 'Praia Imóveis'],
+    tags: ['terreno', 'oportunidade', 'Oeste', 'Praia Imóveis', 'LOTE', 'DISPONIVEL'],
     categories: [],
     propertyType: 'LOTE',
     status: 'DISPONIVEL',
@@ -116,13 +116,28 @@ const mockProperties: Property[] = [
     price: 5000000,
     paymentTerms: 'Entrada de 30% + Financiamento',
     additionalFeatures: 'Piscina privativa, vista panorâmica.',
-    tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM', 'MD'],
+    tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral', 'FR', 'VM', 'MD', 'APARTAMENTO', 'VENDIDO_NA_SEMANA'],
     categories: ['FR', 'VM', 'MD'],
     propertyType: 'APARTAMENTO',
     status: 'VENDIDO_NA_SEMANA',
     neighborhood: 'Centro'
   },
 ];
+
+const STATUS_LABELS: Record<PropertyStatus, string> = {
+    DISPONIVEL: 'Disponível',
+    NOVO_NA_SEMANA: 'Novo na Semana',
+    ALTERADO: 'Alterado',
+    VENDIDO_NA_SEMANA: 'Vendido na Semana',
+    VENDIDO_NO_MES: 'Vendido no Mês',
+};
+
+const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
+    CASA: 'Casa',
+    APARTAMENTO: 'Apartamento',
+    LOTE: 'Lote',
+    OUTRO: 'Outro',
+}
 
 export function PageClient() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -163,62 +178,44 @@ export function PageClient() {
     }
   }, [properties, isClient, toast]);
 
-  const addProperty = (data: Omit<Property, 'id'>) => {
+  const addOrUpdateTags = (data: Omit<Property, 'id'>): string[] => {
     let tags = data.tags || [];
-    if (data.neighborhood && !tags.includes(data.neighborhood)) {
-        tags.push(data.neighborhood);
-    }
-    if (data.agencyName && !tags.includes(data.agencyName)) {
-      tags.push(data.agencyName);
-    }
+    const fieldsToTag = [data.neighborhood, data.agencyName, data.propertyType, data.status];
+    fieldsToTag.forEach(field => {
+        if (field && !tags.includes(field)) {
+            tags.push(field);
+        }
+    });
+
     if (data.categories) {
       tags = [...new Set([...tags, ...data.categories])];
     }
-    
+    return tags;
+  };
+
+  const addProperty = (data: Omit<Property, 'id'>) => {
     const newProperty: Property = {
       id: new Date().toISOString(),
       ...data,
-      tags,
+      tags: addOrUpdateTags(data),
     };
     setProperties(prev => [newProperty, ...prev]);
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" adicionado.` });
   };
   
   const addMultipleProperties = (newPropertiesData: Omit<Property, 'id'>[]) => {
-    const newProperties: Property[] = newPropertiesData.map((data, index) => {
-      let tags = data.tags || [];
-      if (data.neighborhood && !tags.includes(data.neighborhood)) {
-          tags.push(data.neighborhood);
-      }
-      if (data.agencyName && !tags.includes(data.agencyName)) {
-        tags.push(data.agencyName);
-      }
-      if (data.categories) {
-        tags = [...new Set([...tags, ...data.categories])];
-      }
-      return {
-        id: `${new Date().toISOString()}-${index}`,
-        ...data,
-        tags,
-      };
-    });
+    const newProperties: Property[] = newPropertiesData.map((data, index) => ({
+      id: `${new Date().toISOString()}-${index}`,
+      ...data,
+      tags: addOrUpdateTags(data),
+    }));
   
     setProperties(prev => [...newProperties, ...prev]);
     toast({ title: "Sucesso!", description: `${newProperties.length} imóvel${newProperties.length > 1 ? 'is' : ''} importado${newProperties.length > 1 ? 's' : ''}.` });
   };
 
   const updateProperty = (data: Omit<Property, 'id'>, id: string) => {
-    let tags = data.tags || [];
-    if (data.neighborhood && !tags.includes(data.neighborhood)) {
-        tags.push(data.neighborhood);
-    }
-    if (data.agencyName && !tags.includes(data.agencyName)) {
-      tags.push(data.agencyName);
-    }
-    if (data.categories) {
-      tags = [...new Set([...tags, ...data.categories])];
-    }
-    const updatedProperty = { ...data, id, tags };
+    const updatedProperty = { ...data, id, tags: addOrUpdateTags(data) };
     setProperties(prev => prev.map(p => p.id === id ? updatedProperty : p));
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" atualizado.` });
     setEditingProperty(null);
@@ -240,9 +237,12 @@ export function PageClient() {
     setAddEditDialogOpen(true);
   };
 
-  const allTags = useMemo(() => {
-    return [...new Set(properties.flatMap(p => p.tags))].sort();
-  }, [properties]);
+  const allNeighborhoods = useMemo(() => [...new Set(properties.map(p => p.neighborhood).filter((n): n is string => !!n))].sort(), [properties]);
+  const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort(), [properties]);
+  const allPropertyTypes = useMemo(() => [...new Set(properties.map(p => p.propertyType))].sort(), [properties]);
+  const allStatuses = useMemo(() => [...new Set(properties.map(p => p.status))].sort(), [properties]);
+  const allAgencies = useMemo(() => [...new Set(properties.map(p => p.agencyName).filter((a): a is string => !!a))].sort(), [properties]);
+
   
   const toggleTagFilter = (tag: string) => {
     setActiveTags(prev => 
@@ -281,6 +281,26 @@ export function PageClient() {
     return sortableItems;
   }, [filteredProperties, sortConfig]);
 
+  const FilterSection = ({ title, tags, displayMap, onToggle }: { title: string, tags: string[], displayMap?: Record<string, string>, onToggle: (tag: string) => void}) => {
+    if (tags.length === 0) return null;
+    return (
+      <div>
+        <h4 className="font-medium text-sm text-muted-foreground mb-2">{title}</h4>
+        <div className="flex flex-wrap gap-2 items-center">
+          {tags.map(tag => (
+            <Badge
+              key={tag}
+              variant={activeTags.includes(tag) ? "default" : "secondary"}
+              onClick={() => onToggle(tag)}
+              className="cursor-pointer transition-all hover:shadow-md"
+            >
+              {displayMap ? displayMap[tag] : tag}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!isClient) {
     return null; // or a loading spinner
@@ -299,33 +319,25 @@ export function PageClient() {
 
         {properties.length > 0 && (
           <Card>
-            <CardHeader>
+            <CardHeader className='pb-4'>
               <CardTitle>Filtros</CardTitle>
             </CardHeader>
             <CardContent>
-              {allTags.length > 0 ? (
-                 <div className="flex flex-wrap gap-2 items-center">
-                  <span className="text-sm font-medium text-muted-foreground">Tags:</span>
-                  {allTags.map(tag => (
-                    <Badge
-                      key={tag}
-                      variant={activeTags.includes(tag) ? "default" : "secondary"}
-                      onClick={() => toggleTagFilter(tag)}
-                      className="cursor-pointer transition-all hover:shadow-md"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                  {activeTags.length > 0 && (
+               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <FilterSection title="Status" tags={allStatuses} displayMap={STATUS_LABELS} onToggle={toggleTagFilter} />
+                  <FilterSection title="Bairro" tags={allNeighborhoods} onToggle={toggleTagFilter} />
+                  <FilterSection title="Imobiliária" tags={allAgencies} onToggle={toggleTagFilter} />
+                  <FilterSection title="Tipo de Imóvel" tags={allPropertyTypes} displayMap={PROPERTY_TYPE_LABELS} onToggle={toggleTagFilter} />
+                  <FilterSection title="Categorias" tags={allCategories} onToggle={toggleTagFilter} />
+                </div>
+                {activeTags.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
                     <Button variant="ghost" size="sm" onClick={() => setActiveTags([])}>
                       <X className="h-4 w-4 mr-1"/>
                       Limpar Filtros
                     </Button>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Nenhuma tag foi adicionada aos imóveis ainda.</p>
-              )}
+                  </div>
+                )}
             </CardContent>
           </Card>
         )}
