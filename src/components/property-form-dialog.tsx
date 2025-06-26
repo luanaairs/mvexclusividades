@@ -26,7 +26,7 @@ const formSchema = z.object({
   additionalFeatures: z.string().optional(),
   tags: z.string().optional(),
   propertyType: z.enum(['CASA', 'APARTAMENTO', 'LOTE', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
-  categories: z.array(z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR'])).optional(),
+  categories: z.array(z.enum(['FR', 'L', 'FU', 'M', 'MD', 'VM'])).optional(),
   status: z.enum(['DISPONIVEL', 'NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
   brokerContact: z.string().optional(),
   photoDriveLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),

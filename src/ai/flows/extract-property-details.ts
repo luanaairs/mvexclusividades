@@ -41,7 +41,7 @@ const PropertyDetailsSchema = z.object({
   extraMaterialLink: z.string().url().describe('A URL link to extra materials (e.g., brochures, videos).').optional(),
   address: z.string().describe('The full property address.').optional(),
   neighborhood: z.string().describe('The neighborhood of the property.').optional(),
-  categories: z.array(z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR'])).describe('A list of property categories.').optional(),
+  categories: z.array(z.enum(['FR', 'L', 'FU', 'M', 'MD', 'VM'])).describe("A list of property categories using the following codes: FR (Frente), L (Lateral), FU (Fundos), M (Mobiliado), MD (Decorado), VM (Com Vista para o Mar).").optional(),
 });
 export type PropertyDetails = z.infer<typeof PropertyDetailsSchema>;
 
@@ -78,7 +78,7 @@ For each property, extract the following information:
 - Payment Terms: The payment terms for the property.
 - Additional Features: Any additional features of the property.
 - Property Type: The type of property (e.g., CASA, APARTAMENTO, LOTE, OUTRO).
-- Categories: A list of categories for the property (e.g., FRENTE, LATERAL, FUNDOS, DECORADO, MOBILIADO, COM_VISTA_PARA_O_MAR).
+- Categories: A list of categories for the property. Use ONLY the following codes: FR for Frente, L for Lateral, FU for Fundos, M for Mobiliado, MD for Decorado, VM for Com Vista para o Mar.
 - Broker Contact: The contact information for the broker/agent (phone, email).
 - Photo Drive Link: A URL link to a photo gallery (e.g., Google Drive).
 - Extra Material Link: A URL link to extra materials (e.g., brochures, videos).

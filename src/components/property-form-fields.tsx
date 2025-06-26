@@ -21,12 +21,12 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
 ];
 
 const CATEGORIES: { value: PropertyCategory; label: string }[] = [
-    { value: 'FRENTE', label: 'Frente' },
-    { value: 'LATERAL', label: 'Lateral' },
-    { value: 'FUNDOS', label: 'Fundos' },
-    { value: 'DECORADO', label: 'Decorado' },
-    { value: 'MOBILIADO', label: 'Mobiliado' },
-    { value: 'COM_VISTA_PARA_O_MAR', label: 'Com Vista para o Mar' },
+    { value: 'FR', label: 'Frente' },
+    { value: 'L', label: 'Lateral' },
+    { value: 'FU', label: 'Fundos' },
+    { value: 'M', label: 'Mobiliado' },
+    { value: 'MD', label: 'Decorado' },
+    { value: 'VM', label: 'Com Vista para o Mar' },
 ];
 
 const STATUSES: { value: PropertyStatus; label: string }[] = [

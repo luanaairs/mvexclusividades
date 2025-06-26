@@ -63,8 +63,17 @@ const renderStatusBadge = (status: PropertyStatus) => {
   }
 };
 
+const categoryMap: Record<PropertyCategory, string> = {
+    'FR': 'Frente',
+    'L': 'Lateral',
+    'FU': 'Fundos',
+    'M': 'Mobiliado',
+    'MD': 'Decorado',
+    'VM': 'Vista p/ Mar'
+};
+
 const formatCategory = (category: PropertyCategory) => {
-    return category.replace(/_/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    return categoryMap[category] || category;
 }
 
 export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortConfig }: PropertyTableProps) {

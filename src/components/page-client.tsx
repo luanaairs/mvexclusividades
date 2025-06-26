@@ -32,7 +32,7 @@ const mockProperties: Property[] = [
     paymentTerms: 'Entrada de 20% + Financiamento',
     additionalFeatures: 'Piscina e academia no prédio.',
     tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral'],
-    categories: ['FRENTE', 'COM_VISTA_PARA_O_MAR'],
+    categories: ['FR', 'VM'],
     propertyType: 'APARTAMENTO',
     status: 'NOVO_NA_SEMANA',
     neighborhood: 'Centro',
@@ -56,7 +56,7 @@ const mockProperties: Property[] = [
     paymentTerms: 'À vista com 10% de desconto',
     additionalFeatures: 'Amplo jardim com churrasqueira.',
     tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis'],
-    categories: ['MOBILIADO'],
+    categories: ['M'],
     propertyType: 'CASA',
     status: 'DISPONIVEL',
     neighborhood: 'Norte',
@@ -77,7 +77,7 @@ const mockProperties: Property[] = [
     paymentTerms: 'Sinal + parcelas mensais',
     additionalFeatures: 'Salão de festas e playground.',
     tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral'],
-    categories: ['LATERAL'],
+    categories: ['L'],
     propertyType: 'APARTAMENTO',
     status: 'ALTERADO',
     neighborhood: 'Sul'
@@ -117,7 +117,7 @@ const mockProperties: Property[] = [
     paymentTerms: 'Entrada de 30% + Financiamento',
     additionalFeatures: 'Piscina privativa, vista panorâmica.',
     tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral'],
-    categories: ['FRENTE', 'COM_VISTA_PARA_O_MAR', 'DECORADO'],
+    categories: ['FR', 'VM', 'MD'],
     propertyType: 'APARTAMENTO',
     status: 'VENDIDO_NA_SEMANA',
     neighborhood: 'Centro'
@@ -140,7 +140,7 @@ export function PageClient() {
     setIsClient(true);
     try {
       const storedProperties = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedProperties) {
+      if (storedProperties && storedProperties !== '[]') {
         setProperties(JSON.parse(storedProperties));
       } else {
         setProperties(mockProperties);
@@ -148,6 +148,7 @@ export function PageClient() {
     } catch (error) {
       console.error("Failed to load properties from local storage", error);
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados salvos." });
+      setProperties(mockProperties);
     }
   }, [toast]);
 
