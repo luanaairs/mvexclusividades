@@ -47,6 +47,8 @@ const formatPropertyType = (type: string) => {
 
 const renderStatusBadge = (status: PropertyStatus) => {
   switch (status) {
+    case 'DISPONIVEL':
+      return <Badge variant="outline">Disponível</Badge>;
     case 'NOVO_NA_SEMANA':
       return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Novo</Badge>;
     case 'ALTERADO':

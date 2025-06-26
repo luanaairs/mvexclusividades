@@ -24,6 +24,7 @@ const CATEGORIES: { value: PropertyCategory; label: string }[] = [
 ];
 
 const STATUSES: { value: PropertyStatus; label: string }[] = [
+  { value: 'DISPONIVEL', label: 'Disponível' },
   { value: 'NOVO_NA_SEMANA', label: 'Novo na Semana (Verde)' },
   { value: 'ALTERADO', label: 'Alterado (Amarelo)' },
   { value: 'VENDIDO_NA_SEMANA', label: 'Vendido na Semana (Vermelho)' },

@@ -1,6 +1,6 @@
 export type PropertyCategory = 'FRENTE' | 'LATERAL' | 'FUNDOS' | 'DECORADO' | 'MOBILIADO' | 'COM_VISTA_PARA_O_MAR';
 export type PropertyType = 'CASA' | 'APARTAMENTO' | 'OUTRO';
-export type PropertyStatus = 'NOVO_NA_SEMANA' | 'ALTERADO' | 'VENDIDO_NA_SEMANA' | 'VENDIDO_NO_MES';
+export type PropertyStatus = 'DISPONIVEL' | 'NOVO_NA_SEMANA' | 'ALTERADO' | 'VENDIDO_NA_SEMANA' | 'VENDIDO_NO_MES';
 
 export type Property = {
   id: string;

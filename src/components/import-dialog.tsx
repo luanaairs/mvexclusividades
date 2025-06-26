@@ -33,7 +33,7 @@ const propertySchema = z.object({
   tags: z.string().optional(),
   propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
   category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).optional().or(z.literal('')),
-  status: z.enum(['NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
+  status: z.enum(['DISPONIVEL', 'NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
   brokerContact: z.string().optional(),
   photoDriveLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
   extraMaterialLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
@@ -60,6 +60,7 @@ const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
 ];
 
 const STATUSES: { value: PropertyStatus; label: string }[] = [
+  { value: 'DISPONIVEL', label: 'Disponível' },
   { value: 'NOVO_NA_SEMANA', label: 'Novo na Semana' },
   { value: 'ALTERADO', label: 'Alterado' },
   { value: 'VENDIDO_NA_SEMANA', label: 'Vendido na Semana' },
