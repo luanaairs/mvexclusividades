@@ -37,10 +37,12 @@ const ocrFlow = ai.defineFlow(
     outputSchema: OcrOutputSchema,
   },
   async (input) => {
-    // We use a simple prompt that just includes the media.
-    // For documents, this will perform OCR and return the text.
+    // We use a multi-part prompt to send the document data correctly.
     const llmResponse = await ai.generate({
-        prompt: `Extract all text from the following document:\n{{media url="${input.documentDataUri}"}}`,
+      prompt: [
+        {text: 'Extract all text from the following document:'},
+        {media: {url: input.documentDataUri}},
+      ],
     });
 
     return { text: llmResponse.text };
