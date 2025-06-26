@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { X } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'exclusivity-list';
+type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 
 export function PageClient() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -23,6 +24,7 @@ export function PageClient() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
   
   const { toast } = useToast();
 
@@ -51,16 +53,27 @@ export function PageClient() {
   }, [properties, isClient, toast]);
 
   const addProperty = (data: Omit<Property, 'id'>) => {
+    const tags = data.tags || [];
+    if (data.neighborhood && !tags.includes(data.neighborhood)) {
+        tags.push(data.neighborhood);
+    }
+    
     const newProperty: Property = {
       id: new Date().toISOString(),
       ...data,
+      tags,
     };
     setProperties(prev => [newProperty, ...prev]);
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" adicionado.` });
   };
 
   const updateProperty = (data: Omit<Property, 'id'>, id: string) => {
-    setProperties(prev => prev.map(p => p.id === id ? { ...data, id } : p));
+    const tags = data.tags || [];
+    if (data.neighborhood && !tags.includes(data.neighborhood)) {
+        tags.push(data.neighborhood);
+    }
+    const updatedProperty = { ...data, id, tags };
+    setProperties(prev => prev.map(p => p.id === id ? updatedProperty : p));
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" atualizado.` });
     setEditingProperty(null);
   };
@@ -95,6 +108,32 @@ export function PageClient() {
     if (activeTags.length === 0) return properties;
     return properties.filter(p => activeTags.every(tag => p.tags.includes(tag)));
   }, [properties, activeTags]);
+
+  const requestSort = (key: SortableKeys) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedProperties = useMemo(() => {
+    let sortableItems = [...filteredProperties];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key] ?? 0;
+        const bValue = b[sortConfig.key] ?? 0;
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredProperties, sortConfig]);
 
 
   if (!isClient) {
@@ -147,9 +186,11 @@ export function PageClient() {
 
         <main>
           <PropertyTable 
-            properties={filteredProperties}
+            properties={sortedProperties}
             onEdit={handleEditClick}
             onDelete={deleteProperty}
+            requestSort={requestSort}
+            sortConfig={sortConfig}
           />
         </main>
       </div>

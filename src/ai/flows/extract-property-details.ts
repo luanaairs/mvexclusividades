@@ -33,6 +33,11 @@ const ExtractPropertyDetailsOutputSchema = z.object({
   paymentTerms: z.string().describe('The payment terms for the property.'),
   additionalFeatures: z.string().describe('Any additional features of the property.'),
   propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO']).describe('The type of property (e.g., CASA, APARTAMENTO).').optional(),
+  brokerContact: z.string().describe('The contact information for the broker/agent (phone, email).').optional(),
+  photoDriveLink: z.string().url().describe('A URL link to a photo gallery (e.g., Google Drive).').optional(),
+  extraMaterialLink: z.string().url().describe('A URL link to extra materials (e.g., brochures, videos).').optional(),
+  address: z.string().describe('The full property address.').optional(),
+  neighborhood: z.string().describe('The neighborhood of the property.').optional(),
 });
 export type ExtractPropertyDetailsOutput = z.infer<typeof ExtractPropertyDetailsOutputSchema>;
 
@@ -61,6 +66,11 @@ Extract the following information:
 - Payment Terms: The payment terms for the property.
 - Additional Features: Any additional features of the property.
 - Property Type: The type of property (e.g., CASA, APARTAMENTO, OUTRO).
+- Broker Contact: The contact information for the broker/agent (phone, email).
+- Photo Drive Link: A URL link to a photo gallery (e.g., Google Drive).
+- Extra Material Link: A URL link to extra materials (e.g., brochures, videos).
+- Address: The full property address.
+- Neighborhood: The neighborhood of the property.
 
 Here is the document data:
 {{media url=documentDataUri}}

@@ -27,6 +27,11 @@ const formSchema = z.object({
   propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
   category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).optional().or(z.literal('')),
   status: z.enum(['NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
+  brokerContact: z.string().optional(),
+  photoDriveLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
+  extraMaterialLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
+  address: z.string().optional(),
+  neighborhood: z.string().optional(),
 });
 
 
@@ -55,7 +60,12 @@ const defaultValues: FormValues = {
     tags: '',
     propertyType: 'APARTAMENTO',
     category: '',
-    status: 'NOVO_NA_SEMANA'
+    status: 'NOVO_NA_SEMANA',
+    brokerContact: '',
+    photoDriveLink: '',
+    extraMaterialLink: '',
+    address: '',
+    neighborhood: ''
 };
 
 export function PropertyFormDialog({ isOpen, onOpenChange, onSubmit, property }: PropertyFormDialogProps) {
@@ -72,6 +82,11 @@ export function PropertyFormDialog({ isOpen, onOpenChange, onSubmit, property }:
           totalAreaSize: property.totalAreaSize || '',
           tags: property.tags.join(', '),
           category: property.category || '',
+          brokerContact: property.brokerContact || '',
+          photoDriveLink: property.photoDriveLink || '',
+          extraMaterialLink: property.extraMaterialLink || '',
+          address: property.address || '',
+          neighborhood: property.neighborhood || '',
         });
       } else {
         form.reset(defaultValues);
@@ -85,6 +100,11 @@ export function PropertyFormDialog({ isOpen, onOpenChange, onSubmit, property }:
       totalAreaSize: Number(data.totalAreaSize) || undefined,
       tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
       category: data.category || undefined,
+      brokerContact: data.brokerContact || undefined,
+      photoDriveLink: data.photoDriveLink || undefined,
+      extraMaterialLink: data.extraMaterialLink || undefined,
+      address: data.address || undefined,
+      neighborhood: data.neighborhood || undefined,
     };
     onSubmit(propertyData);
     onOpenChange(false);

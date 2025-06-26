@@ -20,4 +20,9 @@ export type Property = {
   category?: PropertyCategory;
   propertyType: PropertyType;
   status: PropertyStatus;
+  brokerContact?: string;
+  photoDriveLink?: string;
+  extraMaterialLink?: string;
+  address?: string;
+  neighborhood?: string;
 };

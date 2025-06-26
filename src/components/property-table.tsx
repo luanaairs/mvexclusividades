@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Home } from "lucide-react";
+import { Edit, Trash2, Home, ArrowUp, ArrowDown, ChevronsUpDown } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,10 +26,14 @@ import {
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
 
+type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
+
 interface PropertyTableProps {
   properties: Property[];
   onEdit: (property: Property) => void;
   onDelete: (id: string) => void;
+  requestSort: (key: SortableKeys) => void;
+  sortConfig: { key: SortableKeys; direction: 'ascending' | 'descending' } | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -44,9 +48,9 @@ const formatPropertyType = (type: string) => {
 const renderStatusBadge = (status: PropertyStatus) => {
   switch (status) {
     case 'NOVO_NA_SEMANA':
-      return <Badge variant="default">Novo</Badge>;
+      return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Novo</Badge>;
     case 'ALTERADO':
-      return <Badge variant="secondary">Alterado</Badge>;
+      return <Badge variant="secondary" className="bg-yellow-500 hover:bg-yellow-600 text-black">Alterado</Badge>;
     case 'VENDIDO_NA_SEMANA':
     case 'VENDIDO_NO_MES':
       return <Badge variant="destructive">Vendido</Badge>;
@@ -57,8 +61,18 @@ const renderStatusBadge = (status: PropertyStatus) => {
 };
 
 
-export function PropertyTable({ properties, onEdit, onDelete }: PropertyTableProps) {
+export function PropertyTable({ properties, onEdit, onDelete, requestSort, sortConfig }: PropertyTableProps) {
   const [deleteCandidate, setDeleteCandidate] = useState<Property | null>(null);
+
+  const getSortIcon = (name: SortableKeys) => {
+    if (!sortConfig || sortConfig.key !== name) {
+      return <ChevronsUpDown className="h-4 w-4 ml-2 opacity-30" />;
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ArrowUp className="h-4 w-4 ml-2" />;
+    }
+    return <ArrowDown className="h-4 w-4 ml-2" />;
+  };
   
   if (properties.length === 0) {
     return (
@@ -81,9 +95,24 @@ export function PropertyTable({ properties, onEdit, onDelete }: PropertyTablePro
               <TableHead>Status</TableHead>
               <TableHead>Empreendimento</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead className="text-center">Q/B/S/L</TableHead>
-              <TableHead className="text-center">Área (m²)</TableHead>
-              <TableHead>Preço</TableHead>
+              <TableHead className="text-center">
+                <Button variant="ghost" onClick={() => requestSort('bedrooms')}>
+                  Q/B/S/L
+                  {getSortIcon('bedrooms')}
+                </Button>
+              </TableHead>
+              <TableHead className="text-center">
+                <Button variant="ghost" onClick={() => requestSort('areaSize')}>
+                  Área (m²)
+                  {getSortIcon('areaSize')}
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => requestSort('price')}>
+                  Preço
+                  {getSortIcon('price')}
+                </Button>
+              </TableHead>
               <TableHead>Tags</TableHead>
               <TableHead className="text-right w-[120px]">Ações</TableHead>
             </TableRow>

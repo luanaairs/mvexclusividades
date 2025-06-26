@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PropertyFormFields } from "./property-form-fields";
-import { type Property, type PropertyCategory, type PropertyType, type PropertyStatus } from "@/types";
+import { type Property } from "@/types";
 import { extractPropertyDetails } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileUp } from "lucide-react";
@@ -32,6 +32,11 @@ const formSchema = z.object({
   propertyType: z.enum(['CASA', 'APARTAMENTO', 'OUTRO'], { required_error: "O tipo de imóvel é obrigatório." }),
   category: z.enum(['FRENTE', 'LATERAL', 'FUNDOS', 'DECORADO', 'MOBILIADO', 'COM_VISTA_PARA_O_MAR']).optional().or(z.literal('')),
   status: z.enum(['NOVO_NA_SEMANA', 'ALTERADO', 'VENDIDO_NA_SEMANA', 'VENDIDO_NO_MES'], { required_error: "O status é obrigatório." }),
+  brokerContact: z.string().optional(),
+  photoDriveLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
+  extraMaterialLink: z.string().url({ message: "Por favor, insira uma URL válida." }).optional().or(z.literal('')),
+  address: z.string().optional(),
+  neighborhood: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -42,6 +47,29 @@ interface ImportDialogProps {
   onImport: (data: Omit<Property, 'id'>) => void;
 }
 
+const defaultValues: Partial<FormValues> = {
+  status: 'NOVO_NA_SEMANA',
+  agentName: '',
+  propertyName: '',
+  houseNumber: '',
+  bedrooms: 0,
+  bathrooms: 0,
+  suites: 0,
+  lavabos: 0,
+  areaSize: 0,
+  totalAreaSize: '',
+  price: 0,
+  paymentTerms: '',
+  additionalFeatures: '',
+  tags: '',
+  category: '',
+  brokerContact: '',
+  photoDriveLink: '',
+  extraMaterialLink: '',
+  address: '',
+  neighborhood: ''
+};
+
 export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogProps) {
   const [isPending, startTransition] = useTransition();
   const [extractedData, setExtractedData] = useState<ExtractPropertyDetailsOutput | null>(null);
@@ -49,30 +77,12 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      status: 'NOVO_NA_SEMANA'
-    }
+    defaultValues
   });
 
   const resetDialog = () => {
     setExtractedData(null);
-    form.reset({
-      status: 'NOVO_NA_SEMANA',
-      agentName: '',
-      propertyName: '',
-      houseNumber: '',
-      bedrooms: 0,
-      bathrooms: 0,
-      suites: 0,
-      lavabos: 0,
-      areaSize: 0,
-      totalAreaSize: '',
-      price: 0,
-      paymentTerms: '',
-      additionalFeatures: '',
-      tags: '',
-      category: '',
-    });
+    form.reset(defaultValues);
   }
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,14 +97,16 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
         if (result.success && result.data) {
           setExtractedData(result.data);
           form.reset({
+            ...defaultValues,
             ...result.data,
             houseNumber: result.data.houseNumber || '',
             lavabos: result.data.lavabos || 0,
-            propertyType: result.data.propertyType || undefined,
-            status: 'NOVO_NA_SEMANA',
-            totalAreaSize: '',
-            tags: '',
-            category: '',
+            propertyType: result.data.propertyType || 'OUTRO',
+            brokerContact: result.data.brokerContact || '',
+            photoDriveLink: result.data.photoDriveLink || '',
+            extraMaterialLink: result.data.extraMaterialLink || '',
+            address: result.data.address || '',
+            neighborhood: result.data.neighborhood || '',
           });
         } else {
           toast({ variant: "destructive", title: "Erro na Importação", description: result.error });
@@ -113,6 +125,11 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
       totalAreaSize: Number(data.totalAreaSize) || undefined,
       tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
       category: data.category || undefined,
+      brokerContact: data.brokerContact || undefined,
+      photoDriveLink: data.photoDriveLink || undefined,
+      extraMaterialLink: data.extraMaterialLink || undefined,
+      address: data.address || undefined,
+      neighborhood: data.neighborhood || undefined,
     };
     onImport(propertyData);
     onOpenChange(false);
@@ -139,7 +156,7 @@ export function ImportDialog({ isOpen, onOpenChange, onImport }: ImportDialogPro
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)}>
               <PropertyFormFields />
-              <DialogFooter className="mt-6">
+              <DialogFooter className="mt-6 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                 <Button type="submit">Adicionar à Tabela</Button>
               </DialogFooter>

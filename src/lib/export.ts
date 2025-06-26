@@ -1,11 +1,11 @@
 import { type Property } from "@/types";
 
-function escapeCsvCell(cellData: string): string {
-  if (!cellData) return '""';
-  if (cellData.includes(',')) {
-    return `"${cellData.replace(/"/g, '""')}"`;
+function escapeCsvCell(cellData: string | number | undefined): string {
+  const cellString = String(cellData ?? '');
+  if (cellString.includes(',') || cellString.includes('"') || cellString.includes('\n')) {
+    return `"${cellString.replace(/"/g, '""')}"`;
   }
-  return cellData;
+  return cellString;
 }
 
 export function exportToCsv(properties: Property[]) {
@@ -13,7 +13,8 @@ export function exportToCsv(properties: Property[]) {
     "Corretor/Empresa", "Empreendimento", "Número", "Tipo", "Categoria", "Status",
     "Quartos", "Banheiros", "Suítes", "Lavabos",
     "Área Privativa (m²)", "Área Total (m²)", "Preço", "Condições de Pagamento", 
-    "Características Adicionais", "Tags"
+    "Características Adicionais", "Tags", "Endereço", "Bairro", "Contato do Corretor",
+    "Link de Fotos", "Link Material Extra"
   ];
   
   const rows = properties.map(p => [
@@ -21,7 +22,7 @@ export function exportToCsv(properties: Property[]) {
     escapeCsvCell(p.propertyName),
     escapeCsvCell(p.houseNumber),
     escapeCsvCell(p.propertyType),
-    escapeCsvCell(p.category || ''),
+    escapeCsvCell(p.category),
     escapeCsvCell(p.status),
     p.bedrooms.toString(),
     p.bathrooms.toString(),
@@ -33,6 +34,11 @@ export function exportToCsv(properties: Property[]) {
     escapeCsvCell(p.paymentTerms),
     escapeCsvCell(p.additionalFeatures),
     escapeCsvCell(p.tags.join(', ')),
+    escapeCsvCell(p.address),
+    escapeCsvCell(p.neighborhood),
+    escapeCsvCell(p.brokerContact),
+    escapeCsvCell(p.photoDriveLink),
+    escapeCsvCell(p.extraMaterialLink),
   ]);
 
   const csvContent = [
@@ -76,17 +82,22 @@ export function exportToWord(properties: Property[]) {
             <th style="padding: 8px;">Condições de Pagamento</th>
             <th style="padding: 8px;">Características Adicionais</th>
             <th style="padding: 8px;">Tags</th>
+            <th style="padding: 8px;">Endereço</th>
+            <th style="padding: 8px;">Bairro</th>
+            <th style="padding: 8px;">Contato do Corretor</th>
+            <th style="padding: 8px;">Link de Fotos</th>
+            <th style="padding: 8px;">Link Material Extra</th>
           </tr>
         </thead>
         <tbody>
           ${properties.map(p => `
             <tr>
-              <td style="padding: 8px;">${p.agentName}</td>
-              <td style="padding: 8px;">${p.propertyName}</td>
-              <td style="padding: 8px;">${p.houseNumber}</td>
-              <td style="padding: 8px;">${p.propertyType}</td>
+              <td style="padding: 8px;">${p.agentName || ''}</td>
+              <td style="padding: 8px;">${p.propertyName || ''}</td>
+              <td style="padding: 8px;">${p.houseNumber || ''}</td>
+              <td style="padding: 8px;">${p.propertyType || ''}</td>
               <td style="padding: 8px;">${p.category || ''}</td>
-              <td style="padding: 8px;">${p.status}</td>
+              <td style="padding: 8px;">${p.status || ''}</td>
               <td style="padding: 8px;">${p.bedrooms}</td>
               <td style="padding: 8px;">${p.bathrooms}</td>
               <td style="padding: 8px;">${p.suites}</td>
@@ -94,9 +105,14 @@ export function exportToWord(properties: Property[]) {
               <td style="padding: 8px;">${p.areaSize}</td>
               <td style="padding: 8px;">${p.totalAreaSize || ''}</td>
               <td style="padding: 8px;">${p.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
-              <td style="padding: 8px;">${p.paymentTerms}</td>
-              <td style="padding: 8px;">${p.additionalFeatures}</td>
+              <td style="padding: 8px;">${p.paymentTerms || ''}</td>
+              <td style="padding: 8px;">${p.additionalFeatures || ''}</td>
               <td style="padding: 8px;">${p.tags.join(', ')}</td>
+              <td style="padding: 8px;">${p.address || ''}</td>
+              <td style="padding: 8px;">${p.neighborhood || ''}</td>
+              <td style="padding: 8px;">${p.brokerContact || ''}</td>
+              <td style="padding: 8px;">${p.photoDriveLink || ''}</td>
+              <td style="padding: 8px;">${p.extraMaterialLink || ''}</td>
             </tr>
           `).join('')}
         </tbody>
