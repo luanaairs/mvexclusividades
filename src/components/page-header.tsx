@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { PlusCircle, FileUp, Download, Trash2, FileJson } from "lucide-react";
 import Image from "next/image";
+import { ThemeToggle } from "./theme-toggle";
 
 interface PageHeaderProps {
   onAdd: () => void;
@@ -75,6 +76,7 @@ export function PageHeader({
             <Trash2 />
             Limpar Tudo
           </Button>
+          <ThemeToggle />
         </div>
       </div>
     </header>
