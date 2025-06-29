@@ -1,19 +1,31 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { PlusCircle, FileUp, Download } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { PlusCircle, FileUp, Download, Trash2, FileJson } from "lucide-react";
 import Image from "next/image";
 
 interface PageHeaderProps {
   onAdd: () => void;
-  onImport: () => void;
+  onImportDoc: () => void;
+  onImportJson: () => void;
   onExportCsv: () => void;
   onExportWord: () => void;
+  onExportJson: () => void;
+  onClearAll: () => void;
   hasProperties: boolean;
 }
 
-export function PageHeader({ onAdd, onImport, onExportCsv, onExportWord, hasProperties }: PageHeaderProps) {
+export function PageHeader({ 
+  onAdd, 
+  onImportDoc, 
+  onImportJson,
+  onExportCsv, 
+  onExportWord,
+  onExportJson,
+  onClearAll,
+  hasProperties 
+}: PageHeaderProps) {
   return (
     <header className="bg-card shadow-sm rounded-lg p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -26,10 +38,24 @@ export function PageHeader({ onAdd, onImport, onExportCsv, onExportWord, hasProp
             <PlusCircle />
             Adicionar Imóvel
           </Button>
-          <Button onClick={onImport}>
-            <FileUp />
-            Importar Documento
-          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <FileUp />
+                Importar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onImportDoc}>
+                <FileUp className="mr-2" /> De Documento (OCR)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onImportJson}>
+                <FileJson className="mr-2" /> De Arquivo JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" disabled={!hasProperties}>
@@ -38,10 +64,17 @@ export function PageHeader({ onAdd, onImport, onExportCsv, onExportWord, hasProp
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={onExportCsv}>Exportar para Excel (CSV)</DropdownMenuItem>
-              <DropdownMenuItem onClick={onExportWord}>Exportar para Word</DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportCsv}>Para Excel (CSV)</DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportWord}>Para Word</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onExportJson}>Para Backup (JSON)</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          
+          <Button variant="destructive" onClick={onClearAll} disabled={!hasProperties}>
+            <Trash2 />
+            Limpar Tudo
+          </Button>
         </div>
       </div>
     </header>

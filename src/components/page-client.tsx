@@ -1,18 +1,28 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { type Property, type PropertyStatus, type PropertyType } from '@/types';
 import { PageHeader } from './page-header';
 import { PropertyTable } from './property-table';
 import { PropertyFormDialog } from './property-form-dialog';
 import { ImportDialog } from './import-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { exportToCsv, exportToWord } from '@/lib/export';
+import { exportToCsv, exportToWord, exportToJson } from '@/lib/export';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { X } from 'lucide-react';
 import { PropertyDetailsDialog } from './property-details-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const LOCAL_STORAGE_KEY = 'exclusivity-list';
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
@@ -151,7 +161,9 @@ export function PageClient() {
   const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
+  const [isClearConfirmOpen, setClearConfirmOpen] = useState(false);
   
+  const jsonImportRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -246,6 +258,49 @@ export function PageClient() {
     setEditingProperty(null);
     setAddEditDialogOpen(true);
   };
+  
+  const handleExportJson = () => {
+    exportToJson(properties);
+    toast({ title: "Sucesso!", description: "Backup JSON exportado." });
+  };
+
+  const handleImportJsonClick = () => {
+    jsonImportRef.current?.click();
+  };
+
+  const handleJsonFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result;
+        if (typeof text !== 'string') {
+          throw new Error("File could not be read.");
+        }
+        const data = JSON.parse(text);
+
+        if (Array.isArray(data) && (data.length === 0 || (data[0].id && data[0].propertyName))) {
+          setProperties(data);
+          toast({ title: "Sucesso!", description: `${data.length} imóvel${data.length > 1 ? 's' : ''} importado${data.length > 1 ? 's' : ''} do backup.` });
+        } else {
+          throw new Error("Invalid JSON format for properties.");
+        }
+      } catch (error) {
+        console.error("Failed to import JSON:", error);
+        toast({ variant: "destructive", title: "Erro na Importação", description: "O arquivo de backup parece ser inválido ou está corrompido." });
+      } finally {
+        if (event.target) {
+            event.target.value = '';
+        }
+      }
+    };
+    reader.onerror = () => {
+      toast({ variant: "destructive", title: "Erro", description: "Falha ao ler o arquivo." });
+    };
+    reader.readAsText(file);
+  };
 
   const allNeighborhoods = useMemo(() => [...new Set(properties.map(p => p.neighborhood).filter((n): n is string => !!n))].sort(), [properties]);
   const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort(), [properties]);
@@ -321,9 +376,12 @@ export function PageClient() {
       <div className="flex flex-col gap-6">
         <PageHeader 
           onAdd={handleAddClick}
-          onImport={() => setImportDialogOpen(true)}
+          onImportDoc={() => setImportDialogOpen(true)}
+          onImportJson={handleImportJsonClick}
           onExportCsv={() => exportToCsv(properties)}
           onExportWord={() => exportToWord(properties)}
+          onExportJson={handleExportJson}
+          onClearAll={() => setClearConfirmOpen(true)}
           hasProperties={properties.length > 0}
         />
 
@@ -363,6 +421,43 @@ export function PageClient() {
           />
         </main>
       </div>
+      
+      <input
+        type="file"
+        ref={jsonImportRef}
+        accept=".json"
+        className="hidden"
+        onChange={handleJsonFileChange}
+      />
+
+      <AlertDialog open={isClearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar toda a tabela?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita e irá remover todos os {properties.length} imóveis da lista. Recomendamos fazer um backup antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <Button variant="outline" onClick={() => {
+                handleExportJson();
+                toast({ title: "Backup Criado", description: "Seu backup foi salvo. Você pode limpar a tabela agora." });
+            }}>
+              Fazer Backup (JSON)
+            </Button>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                  setProperties([]);
+                  toast({ title: "Tabela Limpa", description: "Todos os imóveis foram removidos." });
+              }}
+            >
+              Sim, limpar tudo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <PropertyFormDialog
         isOpen={isAddEditDialogOpen}
