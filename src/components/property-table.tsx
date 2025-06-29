@@ -36,6 +36,7 @@ interface PropertyTableProps {
   onViewDetails: (property: Property) => void;
   requestSort: (key: SortableKeys) => void;
   sortConfig: { key: SortableKeys; direction: 'ascending' | 'descending' } | null;
+  showActions?: boolean;
 }
 
 const formatCurrency = (value: number) => {
@@ -64,7 +65,7 @@ const renderStatusBadge = (status: PropertyStatus) => {
   }
 };
 
-export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, requestSort, sortConfig }: PropertyTableProps) {
+export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, requestSort, sortConfig, showActions = true }: PropertyTableProps) {
   const [deleteCandidate, setDeleteCandidate] = useState<Property | null>(null);
 
   const getSortIcon = (name: SortableKeys) => {
@@ -119,7 +120,7 @@ export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, req
                   </Button>
                 </TableHead>
                 <TableHead>Tags</TableHead>
-                <TableHead className="text-right w-[120px]">Ações</TableHead>
+                {showActions && <TableHead className="text-right w-[120px]">Ações</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -146,18 +147,20 @@ export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, req
                       ))}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => onEdit(property)}>
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Editar</span>
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteCandidate(property)}>
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Excluir</span>
-                      </Button>
-                    </div>
-                  </TableCell>
+                  {showActions && (
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => onEdit(property)}>
+                          <Edit className="h-4 w-4" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setDeleteCandidate(property)}>
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Excluir</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -199,16 +202,18 @@ export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, req
                     </div>
                 </CardContent>
               </div>
-              <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => onEdit(property)}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                </Button>
-                <Button variant="destructive" size="sm" onClick={() => setDeleteCandidate(property)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Excluir
-                </Button>
-              </CardFooter>
+              {showActions && (
+                <CardFooter className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => onEdit(property)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Editar
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => setDeleteCandidate(property)}>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Excluir
+                  </Button>
+                </CardFooter>
+              )}
             </Card>
         ))}
       </div>

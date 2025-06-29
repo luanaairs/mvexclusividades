@@ -6,6 +6,7 @@ import { PageHeader } from './page-header';
 import { PropertyTable } from './property-table';
 import { PropertyFormDialog } from './property-form-dialog';
 import { ImportDialog } from './import-dialog';
+import { ShareDialog } from './share-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { exportToCsv, exportToWord, exportToJson } from '@/lib/export';
 import { Badge } from './ui/badge';
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const LOCAL_STORAGE_KEY = 'exclusivity-list';
+const SHARED_LISTS_KEY = 'shared-property-lists';
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 
 const mockProperties: Property[] = [
@@ -162,7 +164,9 @@ export function PageClient() {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
   const [isClearConfirmOpen, setClearConfirmOpen] = useState(false);
-  
+  const [isShareDialogOpen, setShareDialogOpen] = useState(false);
+  const [generatedShareUrl, setGeneratedShareUrl] = useState('');
+
   const jsonImportRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -302,6 +306,23 @@ export function PageClient() {
     reader.readAsText(file);
   };
 
+  const handleShare = () => {
+    try {
+      const shareId = Date.now().toString(36) + Math.random().toString(36).slice(2);
+      const storedShares = localStorage.getItem(SHARED_LISTS_KEY);
+      const shares = storedShares ? JSON.parse(storedShares) : {};
+      shares[shareId] = properties;
+      localStorage.setItem(SHARED_LISTS_KEY, JSON.stringify(shares));
+      
+      const url = `${window.location.origin}/share/${shareId}`;
+      setGeneratedShareUrl(url);
+      setShareDialogOpen(true);
+    } catch (error) {
+      console.error("Failed to create share link", error);
+      toast({ variant: "destructive", title: "Erro", description: "Não foi possível criar o link de compartilhamento." });
+    }
+  };
+
   const allNeighborhoods = useMemo(() => [...new Set(properties.map(p => p.neighborhood).filter((n): n is string => !!n))].sort(), [properties]);
   const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort(), [properties]);
   const allPropertyTypes = useMemo(() => [...new Set(properties.map(p => p.propertyType))].sort(), [properties]);
@@ -382,6 +403,7 @@ export function PageClient() {
           onExportWord={() => exportToWord(properties)}
           onExportJson={handleExportJson}
           onClearAll={() => setClearConfirmOpen(true)}
+          onShare={handleShare}
           hasProperties={properties.length > 0}
         />
 
@@ -476,6 +498,12 @@ export function PageClient() {
         isOpen={isImportDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImport={addMultipleProperties}
+      />
+
+      <ShareDialog 
+        isOpen={isShareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        url={generatedShareUrl}
       />
 
       <PropertyDetailsDialog

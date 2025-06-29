@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { PlusCircle, FileUp, Download, Trash2, FileJson } from "lucide-react";
+import { PlusCircle, FileUp, Download, Trash2, FileJson, Share2 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -14,6 +14,7 @@ interface PageHeaderProps {
   onExportWord: () => void;
   onExportJson: () => void;
   onClearAll: () => void;
+  onShare: () => void;
   hasProperties: boolean;
 }
 
@@ -25,6 +26,7 @@ export function PageHeader({
   onExportWord,
   onExportJson,
   onClearAll,
+  onShare,
   hasProperties 
 }: PageHeaderProps) {
   return (
@@ -71,6 +73,11 @@ export function PageHeader({
               <DropdownMenuItem onClick={onExportJson}>Para Backup (JSON)</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button variant="secondary" onClick={onShare} disabled={!hasProperties}>
+            <Share2 />
+            Compartilhar
+          </Button>
           
           <Button variant="destructive" onClick={onClearAll} disabled={!hasProperties}>
             <Trash2 />
