@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Camera, FileText, BedDouble, Bath, CarFront, SquareStack, DollarSign } from "lucide-react";
+import { Camera, FileText, BedSingle, BedDouble, Bath, SquareStack, DollarSign } from "lucide-react";
 
 interface PropertyDetailsDialogProps {
   isOpen: boolean;
@@ -80,7 +80,7 @@ export function PropertyDetailsDialog({ isOpen, onOpenChange, property }: Proper
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
                 <div className="flex flex-col items-center justify-center gap-1 p-2 rounded-md bg-muted/50">
-                    <BedDouble className="h-6 w-6 text-muted-foreground" />
+                    <BedSingle className="h-6 w-6 text-muted-foreground" />
                     <span className="font-bold">{property.bedrooms}</span>
                     <span className="text-xs text-muted-foreground">Quartos</span>
                 </div>
@@ -90,7 +90,7 @@ export function PropertyDetailsDialog({ isOpen, onOpenChange, property }: Proper
                     <span className="text-xs text-muted-foreground">Banheiros</span>
                 </div>
                 <div className="flex flex-col items-center justify-center gap-1 p-2 rounded-md bg-muted/50">
-                    <CarFront className="h-6 w-6 text-muted-foreground" />
+                    <BedDouble className="h-6 w-6 text-muted-foreground" />
                     <span className="font-bold">{property.suites}</span>
                     <span className="text-xs text-muted-foreground">Suítes</span>
                 </div>
