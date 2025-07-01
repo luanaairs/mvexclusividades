@@ -154,6 +154,16 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
     OUTRO: 'Outro',
 }
 
+const CATEGORY_LABELS: Record<PropertyCategory, string> = {
+    FR: 'FR',
+    L: 'L',
+    FU: 'FU',
+    M: 'M',
+    MD: 'MD',
+    VM: 'VM'
+};
+
+
 export function PageClient() {
   const [properties, setProperties] = useState<Property[]>([]);
   const { user, logout } = useAuth();
@@ -324,7 +334,7 @@ export function PageClient() {
   };
 
   const allNeighborhoods = useMemo(() => [...new Set(properties.map(p => p.neighborhood).filter((n): n is string => !!n))].sort(), [properties]);
-  const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort(), [properties]);
+  const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort() as PropertyCategory[], [properties]);
   const allPropertyTypes = useMemo(() => [...new Set(properties.map(p => p.propertyType))].sort(), [properties]);
   const allStatuses = useMemo(() => [...new Set(properties.map(p => p.status))].sort(), [properties]);
   const allAgencies = useMemo(() => [...new Set(properties.map(p => p.agencyName).filter((a): a is string => !!a))].sort(), [properties]);
@@ -389,48 +399,51 @@ export function PageClient() {
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8 font-body">
-      <div className="flex flex-col gap-6">
-        <PageHeader 
-          user={user}
-          onLogout={logout}
-          onAdd={handleAddClick}
-          onImportDoc={() => setImportDialogOpen(true)}
-          onImportJson={handleImportJsonClick}
-          onExportCsv={() => exportToCsv(properties)}
-          onExportWord={() => exportToWord(properties)}
-          onExportJson={handleExportJson}
-          onClearAll={() => setClearConfirmOpen(true)}
-          onShare={handleShare}
-          hasProperties={properties.length > 0}
-        />
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8 font-body flex flex-col h-screen">
+      <div className="flex-shrink-0">
+        <div className="flex flex-col gap-6">
+            <PageHeader 
+            user={user}
+            onLogout={logout}
+            onAdd={handleAddClick}
+            onImportDoc={() => setImportDialogOpen(true)}
+            onImportJson={handleImportJsonClick}
+            onExportCsv={() => exportToCsv(properties)}
+            onExportWord={() => exportToWord(properties)}
+            onExportJson={handleExportJson}
+            onClearAll={() => setClearConfirmOpen(true)}
+            onShare={handleShare}
+            hasProperties={properties.length > 0}
+            />
 
-        {properties.length > 0 && (
-          <Card>
-            <CardHeader className='pb-4'>
-              <CardTitle>Filtros</CardTitle>
-            </CardHeader>
-            <CardContent>
-               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  <FilterSection title="Status" tags={allStatuses} displayMap={STATUS_LABELS} onToggle={toggleTagFilter} />
-                  <FilterSection title="Bairro" tags={allNeighborhoods} onToggle={toggleTagFilter} />
-                  <FilterSection title="Imobiliária" tags={allAgencies} onToggle={toggleTagFilter} />
-                  <FilterSection title="Tipo de Imóvel" tags={allPropertyTypes} displayMap={PROPERTY_TYPE_LABELS} onToggle={toggleTagFilter} />
-                  <FilterSection title="Categorias" tags={allCategories} onToggle={toggleTagFilter} />
-                </div>
-                {activeTags.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    <Button variant="ghost" size="sm" onClick={() => setActiveTags([])}>
-                      <X className="h-4 w-4 mr-1"/>
-                      Limpar Filtros
-                    </Button>
-                  </div>
-                )}
-            </CardContent>
-          </Card>
-        )}
+            {properties.length > 0 && (
+            <Card>
+                <CardHeader className='pb-4'>
+                <CardTitle>Filtros</CardTitle>
+                </CardHeader>
+                <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <FilterSection title="Status" tags={allStatuses} displayMap={STATUS_LABELS} onToggle={toggleTagFilter} />
+                    <FilterSection title="Bairro" tags={allNeighborhoods} onToggle={toggleTagFilter} />
+                    <FilterSection title="Imobiliária" tags={allAgencies} onToggle={toggleTagFilter} />
+                    <FilterSection title="Tipo de Imóvel" tags={allPropertyTypes} displayMap={PROPERTY_TYPE_LABELS} onToggle={toggleTagFilter} />
+                    <FilterSection title="Categorias" tags={allCategories} displayMap={CATEGORY_LABELS} onToggle={toggleTagFilter} />
+                    </div>
+                    {activeTags.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                        <Button variant="ghost" size="sm" onClick={() => setActiveTags([])}>
+                        <X className="h-4 w-4 mr-1"/>
+                        Limpar Filtros
+                        </Button>
+                    </div>
+                    )}
+                </CardContent>
+            </Card>
+            )}
+        </div>
+      </div>
 
-        <main>
+      <main className="flex-grow overflow-y-auto pt-6">
           <PropertyTable 
             properties={sortedProperties}
             onEdit={handleEditClick}
@@ -439,8 +452,7 @@ export function PageClient() {
             requestSort={requestSort}
             sortConfig={sortConfig}
           />
-        </main>
-      </div>
+      </main>
       
       <input
         type="file"
