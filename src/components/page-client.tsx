@@ -85,7 +85,7 @@ export function PageClient() {
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados salvos." });
       setProperties([]);
     }
-  };
+  }, []); 
 
   useEffect(() => {
     if (user) { // Only save if user is logged in
