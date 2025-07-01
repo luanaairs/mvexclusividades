@@ -58,7 +58,7 @@ export async function loginAction(credentials: UserCredentials) {
 
     try {
         const usersRef = collection(db, "users");
-        const q = query(usersRef, where("username", "==", username), where("password", "==", password));
+        const q = query(usersRef, where("username", "==", username));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -66,7 +66,13 @@ export async function loginAction(credentials: UserCredentials) {
         }
 
         const userDoc = querySnapshot.docs[0];
-        const user = { username: userDoc.data().username };
+        const userData = userDoc.data();
+
+        if (userData.password !== password) {
+            return { success: false, error: "Nome de usuário ou senha inválidos." };
+        }
+        
+        const user = { username: userData.username };
         
         return { success: true, user };
 
