@@ -30,115 +30,6 @@ const LOCAL_STORAGE_KEY = 'exclusivity-list';
 const SHARED_LISTS_KEY = 'shared-property-lists';
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 
-const mockProperties: Property[] = [
-    {
-        id: 'mock-1',
-        brokerName: 'Carlos Pereira',
-        agencyName: 'Imóveis Litoral',
-        propertyName: 'Edifício Vista Mar',
-        houseNumber: '101',
-        bedrooms: 3,
-        bathrooms: 2,
-        suites: 1,
-        lavabos: 1,
-        areaSize: 120,
-        price: 1200000,
-        paymentTerms: 'Entrada de 20% + Financiamento',
-        additionalFeatures: 'Piscina e academia no prédio.',
-        propertyType: 'APARTAMENTO',
-        status: 'NOVO_NA_SEMANA',
-        neighborhood: 'Centro',
-        categories: ['FR', 'VM'],
-        tags: ['alto padrão', 'vista mar', 'Centro', 'Imóveis Litoral', 'APARTAMENTO', 'NOVO_NA_SEMANA', 'FR', 'VM'],
-        brokerContact: 'carlos.p@email.com',
-        photoDriveLink: 'https://placehold.co/600x400.png',
-        address: 'Av. Beira Mar, 123'
-    },
-    {
-        id: 'mock-2',
-        brokerName: 'Ana Souza',
-        agencyName: 'Praia Imóveis',
-        propertyName: 'Casa de Veraneio',
-        houseNumber: '50',
-        bedrooms: 4,
-        bathrooms: 3,
-        suites: 2,
-        lavabos: 0,
-        areaSize: 250,
-        totalAreaSize: 400,
-        price: 2500000,
-        paymentTerms: 'À vista com 10% de desconto',
-        additionalFeatures: 'Amplo jardim com churrasqueira.',
-        propertyType: 'CASA',
-        status: 'DISPONIVEL',
-        neighborhood: 'Norte',
-        categories: ['M'],
-        tags: ['luxo', 'beira mar', 'Norte', 'Praia Imóveis', 'CASA', 'DISPONIVEL', 'M'],
-        brokerContact: 'ana.s@email.com',
-    },
-    {
-        id: 'mock-3',
-        brokerName: 'Carlos Pereira',
-        agencyName: 'Imóveis Litoral',
-        propertyName: 'Residencial das Flores',
-        houseNumber: 'A-12',
-        bedrooms: 2,
-        bathrooms: 1,
-        suites: 1,
-        lavabos: 1,
-        areaSize: 85,
-        price: 850000,
-        paymentTerms: 'Sinal + parcelas mensais',
-        additionalFeatures: 'Salão de festas e playground.',
-        propertyType: 'APARTAMENTO',
-        status: 'ALTERADO',
-        neighborhood: 'Sul',
-        categories: ['L'],
-        tags: ['novo', 'investimento', 'Sul', 'Imóveis Litoral', 'APARTAMENTO', 'ALTERADO', 'L'],
-    },
-    {
-        id: 'mock-4',
-        brokerName: 'Fernanda Lima',
-        agencyName: 'Praia Imóveis',
-        propertyName: 'Loteamento Sol Poente',
-        houseNumber: 'Quadra C, Lote 15',
-        bedrooms: 0,
-        bathrooms: 0,
-        suites: 0,
-        lavabos: 0,
-        areaSize: 500,
-        price: 450000,
-        paymentTerms: 'Financiamento direto com a construtora',
-        additionalFeatures: 'Pronto para construir.',
-        propertyType: 'LOTE',
-        status: 'DISPONIVEL',
-        neighborhood: 'Oeste',
-        categories: [],
-        tags: ['terreno', 'oportunidade', 'Oeste', 'Praia Imóveis', 'LOTE', 'DISPONIVEL'],
-    },
-    {
-        id: 'mock-5',
-        brokerName: 'Carlos Pereira',
-        agencyName: 'Imóveis Litoral',
-        propertyName: 'Cobertura Duplex',
-        houseNumber: '2001',
-        bedrooms: 5,
-        bathrooms: 5,
-        suites: 5,
-        lavabos: 2,
-        areaSize: 350,
-        price: 5000000,
-        paymentTerms: 'Entrada de 30% + Financiamento',
-        additionalFeatures: 'Piscina privativa, vista panorâmica.',
-        propertyType: 'APARTAMENTO',
-        status: 'VENDIDO_NA_SEMANA',
-        neighborhood: 'Centro',
-        categories: ['FR', 'VM', 'MD'],
-        tags: ['luxo', 'cobertura', 'vista mar', 'Centro', 'Imóveis Litoral', 'APARTAMENTO', 'VENDIDO_NA_SEMANA', 'FR', 'VM', 'MD'],
-        extraMaterialLink: 'https://placehold.co/600x400.png',
-    },
-];
-
 const STATUS_LABELS: Record<PropertyStatus, string> = {
     DISPONIVEL: 'Disponível',
     NOVO_NA_SEMANA: 'Novo na Semana',
@@ -187,14 +78,14 @@ export function PageClient() {
       if (storedProperties && storedProperties !== '[]' && JSON.parse(storedProperties).length > 0) {
         setProperties(JSON.parse(storedProperties));
       } else {
-        setProperties(mockProperties);
+        setProperties([]);
       }
     } catch (error) {
       console.error("Failed to load properties from local storage", error);
       toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados salvos." });
-      setProperties(mockProperties);
+      setProperties([]);
     }
-  }, [toast]);
+  };
 
   useEffect(() => {
     if (user) { // Only save if user is logged in
