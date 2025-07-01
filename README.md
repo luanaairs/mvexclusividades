@@ -10,5 +10,5 @@ Para começar, dê uma olhada em `src/app/page.tsx`.
 
 Desenvolvido por Luana Aires.
 
-Você pode saber mais sobre Luana Aires e seu trabalho visitando [luanaaires.com](https://luanaaires.com).
+Você pode saber mais sobre Luana Aires e seu trabalho visitando [luanaairs.com](https://luanaairs.com).
 
