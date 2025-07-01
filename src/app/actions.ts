@@ -43,8 +43,11 @@ export async function createUserAction(data: NewUser) {
         
         return { success: true };
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating user in Firestore:", error);
+        if (error.code === 'permission-denied') {
+            return { success: false, error: "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore no seu painel Firebase." };
+        }
         return { success: false, error: "Ocorreu um erro no servidor ao criar o usuário." };
     }
 }
@@ -76,8 +79,11 @@ export async function loginAction(credentials: UserCredentials) {
         
         return { success: true, user };
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error during login:", error);
+        if (error.code === 'permission-denied') {
+            return { success: false, error: "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore no seu painel Firebase." };
+        }
         return { success: false, error: "Ocorreu um erro no servidor durante o login." };
     }
 }
