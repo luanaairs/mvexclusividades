@@ -43,3 +43,13 @@ export const OcrOutputSchema = z.object({
     text: z.string().describe("The extracted text from the document.")
 });
 export type OcrOutput = z.infer<typeof OcrOutputSchema>;
+
+
+export type UserCredentials = {
+  username: string;
+  password?: string;
+};
+
+export type NewUser = UserCredentials & {
+  adminPassword?: string;
+};

@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useAuth } from '@/context/auth-context';
 
 const LOCAL_STORAGE_KEY = 'exclusivity-list';
 const SHARED_LISTS_KEY = 'shared-property-lists';
@@ -155,7 +156,7 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 
 export function PageClient() {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [isClient, setIsClient] = useState(false);
+  const { user, logout } = useAuth();
   
   const [isAddEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -171,7 +172,6 @@ export function PageClient() {
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsClient(true);
     try {
       const storedProperties = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (storedProperties && storedProperties !== '[]' && JSON.parse(storedProperties).length > 0) {
@@ -187,7 +187,7 @@ export function PageClient() {
   }, [toast]);
 
   useEffect(() => {
-    if (isClient) {
+    if (user) { // Only save if user is logged in
       try {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(properties));
       } catch (error) {
@@ -195,7 +195,7 @@ export function PageClient() {
         toast({ variant: "destructive", title: "Erro", description: "Não foi possível salvar as alterações." });
       }
     }
-  }, [properties, isClient, toast]);
+  }, [properties, user, toast]);
 
   const addOrUpdateTags = (data: Omit<Property, 'id'>): string[] => {
     let baseTags = data.tags || [];
@@ -388,14 +388,12 @@ export function PageClient() {
     );
   }
 
-  if (!isClient) {
-    return null; // or a loading spinner
-  }
-
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 font-body">
       <div className="flex flex-col gap-6">
         <PageHeader 
+          user={user}
+          onLogout={logout}
           onAdd={handleAddClick}
           onImportDoc={() => setImportDialogOpen(true)}
           onImportJson={handleImportJsonClick}

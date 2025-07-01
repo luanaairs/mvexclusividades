@@ -1,12 +1,15 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { PlusCircle, FileUp, Download, Trash2, FileJson, Share2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { PlusCircle, FileUp, Download, Trash2, FileJson, Share2, User, LogOut } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
+import { type UserCredentials } from "@/types";
 
 interface PageHeaderProps {
+  user: UserCredentials | null;
+  onLogout: () => void;
   onAdd: () => void;
   onImportDoc: () => void;
   onImportJson: () => void;
@@ -19,6 +22,8 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ 
+  user,
+  onLogout,
   onAdd, 
   onImportDoc, 
   onImportJson,
@@ -83,7 +88,29 @@ export function PageHeader({
             <Trash2 />
             Limpar Tudo
           </Button>
+          
           <ThemeToggle />
+
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <User />
+                  <span className="sr-only">User menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  Logado como <span className="font-bold">{user.username}</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onLogout}>
+                  <LogOut className="mr-2" />
+                  Sair
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>
