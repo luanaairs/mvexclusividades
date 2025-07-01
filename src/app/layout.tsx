@@ -5,8 +5,8 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Exclusividades',
-  description: 'Manage exclusive property listings for your real estate consultancy.',
+  title: 'MV Broker: Exclusividades',
+  description: 'RELAÇÃO DE IMÓVEIS - TABELA DE EXCLUSIVIDADES. PARA USO EXCLUSIVO DE ASSINANTES, PROIBIDA A COMERCIALIZAÇÃO, SE RECEBER ESSA TABELA EM OUTRO SISTEMA, DENUNCIE 51-98328-2535.',
 };
 
 export default function RootLayout({
