@@ -55,7 +55,7 @@ export function SignupClient() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Image src="/logo.png" alt="Exclusividades Logo" width={64} height={64} className="rounded-lg" />
+            <Image src="/logo.svg" alt="MV Broker Logo" width={64} height={64} />
           </div>
           <CardTitle>Criar Novo Usuário</CardTitle>
           <CardDescription>Preencha os dados para criar uma nova conta.</CardDescription>
