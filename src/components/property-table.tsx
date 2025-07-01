@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Home, ArrowUp, ArrowDown, ChevronsUpDown, BedDouble, Bath, CarFront, SquareStack } from "lucide-react";
+import { Edit, Trash2, Home, ArrowUp, ArrowDown, ChevronsUpDown, BedDouble, Bath, CarFront, SquareStack, User, Building } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -100,6 +100,7 @@ export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, req
               <TableRow>
                 <TableHead>Status</TableHead>
                 <TableHead>Empreendimento</TableHead>
+                <TableHead>Corretor / Imobiliária</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead className="text-center">
                   <Button variant="ghost" onClick={() => requestSort('bedrooms')}>
@@ -119,7 +120,6 @@ export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, req
                     {getSortIcon('price')}
                   </Button>
                 </TableHead>
-                <TableHead>Tags</TableHead>
                 {showActions && <TableHead className="text-right w-[120px]">Ações</TableHead>}
               </TableRow>
             </TableHeader>
@@ -136,17 +136,14 @@ export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, req
                   >
                     {property.propertyName} - {property.houseNumber}
                   </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{property.brokerName}</div>
+                    {property.agencyName && <div className="text-xs text-muted-foreground">{property.agencyName}</div>}
+                  </TableCell>
                   <TableCell>{formatPropertyType(property.propertyType)}</TableCell>
                   <TableCell className="text-center">{`${property.bedrooms}/${property.bathrooms}/${property.suites}/${property.lavabos}`}</TableCell>
                   <TableCell className="text-center">{property.areaSize}{property.totalAreaSize ? ` / ${property.totalAreaSize}`: ''}</TableCell>
                   <TableCell>{formatCurrency(property.price)}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {property.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">{tag}</Badge>
-                      ))}
-                    </div>
-                  </TableCell>
                   {showActions && (
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -195,10 +192,17 @@ export function PropertyTable({ properties, onEdit, onDelete, onViewDetails, req
                         <div className="flex items-center gap-2"><SquareStack className="h-4 w-4" /> <span>{property.areaSize}m²</span></div>
                     </div>
                     <Separator />
-                    <div className="flex flex-wrap gap-2">
-                      {property.tags.map((tag) => (
-                          <Badge key={tag} variant="secondary">{tag}</Badge>
-                      ))}
+                     <div>
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>{property.brokerName}</span>
+                        </div>
+                        {property.agencyName && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                            <Building className="h-4 w-4" />
+                            <span>{property.agencyName}</span>
+                        </div>
+                        )}
                     </div>
                 </CardContent>
               </div>
