@@ -1,4 +1,4 @@
-# Firebase Studio
+# MV Exclusividades
 
 Este é um projeto Next.js inicial no Firebase Studio.
 
