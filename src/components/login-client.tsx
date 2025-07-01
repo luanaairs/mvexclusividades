@@ -36,15 +36,18 @@ export function LoginClient() {
     },
   });
 
-  const handleFormSubmit = (data: FormValues) => {
+  const handleFormSubmit = async (data: FormValues) => {
     setIsPending(true);
-    const success = login(data.username, data.password);
-    if (success) {
-      toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${data.username}.` });
-      router.push("/");
-    } else {
-      toast({ variant: "destructive", title: "Erro no Login", description: "Nome de usuário ou senha inválidos." });
-      setIsPending(false);
+    try {
+        const success = await login(data.username, data.password);
+        if (success) {
+          toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${data.username}.` });
+          router.push("/");
+        }
+    } catch (error: any) {
+       toast({ variant: "destructive", title: "Erro no Login", description: error.message || "Nome de usuário ou senha inválidos." });
+    } finally {
+        setIsPending(false);
     }
   };
 
