@@ -1,5 +1,6 @@
 'use server';
-import { extractTextFromDocument as ocrFlow, type OcrInput } from "@/ai/flows/extract-property-details";
+import { extractTextFromDocument as ocrFlow } from "@/ai/flows/extract-property-details";
+import { type OcrInput } from "@/types";
 
 export async function performOcr(input: OcrInput) {
     try {

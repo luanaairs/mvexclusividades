@@ -10,11 +10,10 @@ import { Form, FormControl, FormField } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { type Property, type PropertyCategory, type PropertyType, type PropertyStatus } from "@/types";
+import { type Property, type PropertyCategory, type PropertyType, type PropertyStatus, type OcrOutput } from "@/types";
 import { performOcr } from "@/app/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, FileUp, Trash2, PlusCircle } from "lucide-react";
-import { type OcrOutput } from "@/ai/flows/extract-property-details";
 import { ScrollArea } from "./ui/scroll-area";
 import { Textarea } from "./ui/textarea";
 
