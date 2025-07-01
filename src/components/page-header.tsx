@@ -38,7 +38,7 @@ export function PageHeader({
     <header className="bg-card shadow-sm rounded-lg p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-3 text-2xl font-bold text-primary">
-          <Image src="/logo.png" alt="Exclusividades Logo" width={48} height={48} className="rounded-lg" />
+          <Image src="/logo.svg" alt="MV Broker Logo" width={48} height={48} />
           <h1 className="font-headline">Exclusividades</h1>
         </div>
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
