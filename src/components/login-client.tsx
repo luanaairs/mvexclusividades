@@ -53,7 +53,7 @@ export function LoginClient() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <Image src="/logo.png" alt="Exclusividades Logo" width={64} height={64} className="rounded-lg" />
+            <Image src="/logo.svg" alt="MV Broker Logo" width={64} height={64} />
           </div>
           <CardTitle>Acessar Plataforma</CardTitle>
           <CardDescription>Use suas credenciais para entrar.</CardDescription>
