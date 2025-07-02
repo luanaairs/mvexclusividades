@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { type UserCredentials } from '@/types';
-import { auth } from '@/lib/firebase';
+import { auth, firebaseError } from '@/lib/firebase';
 import { 
   onAuthStateChanged, 
   createUserWithEmailAndPassword, 
@@ -11,6 +11,7 @@ import {
   signOut,
   type User
 } from 'firebase/auth';
+import { AlertCircle } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
@@ -27,7 +28,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // If Firebase fails to initialize, show a clear error message.
+  if (firebaseError) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-muted p-4">
+        <div className="w-full max-w-md rounded-lg border border-destructive bg-card p-6 text-center shadow-lg">
+          <AlertCircle className="mx-auto h-12 w-12 text-destructive" />
+          <h1 className="mt-4 text-xl font-bold text-destructive">Erro de Configuração do Firebase</h1>
+          <p className="mt-2 text-muted-foreground">{firebaseError}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Ensure auth is not null before proceeding
   useEffect(() => {
+    if (!auth) {
+        setLoading(false);
+        return;
+    };
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -37,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (credentials: UserCredentials) => {
+    if (!auth) throw new Error("Firebase não inicializado.");
     if (!credentials.email || !credentials.password) {
         throw new Error("Email e senha são obrigatórios.");
     }
@@ -52,14 +72,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    if (!auth) throw new Error("Firebase não inicializado.");
     await signOut(auth);
     router.push('/login');
   };
 
   const createUser = async (credentials: UserCredentials) => {
+    if (!auth) throw new Error("Firebase não inicializado.");
     if (!credentials.email || !credentials.password) {
         throw new Error("Email e senha são obrigatórios.");
     }
+
+    const adminKey = process.env.NEXT_PUBLIC_ADMIN_KEY;
+    if (!adminKey) {
+        throw new Error("A chave de administrador do aplicativo não está configurada.");
+    }
+
+    if (credentials.adminKey !== adminKey) {
+        throw new Error("Chave de administrador inválida.");
+    }
+
     try {
       await createUserWithEmailAndPassword(auth, credentials.email, credentials.password);
     } catch (error: any) {

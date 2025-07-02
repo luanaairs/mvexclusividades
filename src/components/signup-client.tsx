@@ -18,6 +18,7 @@ import { Loader2 } from "lucide-react";
 const formSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
   password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
+  adminKey: z.string().min(1, { message: "A chave de administrador é obrigatória." }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -33,13 +34,14 @@ export function SignupClient() {
     defaultValues: {
       email: "",
       password: "",
+      adminKey: "",
     },
   });
 
   const handleFormSubmit = async (data: FormValues) => {
     setIsPending(true);
     try {
-      await createUser({ email: data.email, password: data.password });
+      await createUser({ email: data.email, password: data.password, adminKey: data.adminKey });
       toast({ title: "Usuário Criado!", description: "Sua conta foi criada com sucesso. Por favor, faça o login." });
       router.push("/login");
     } catch (error: any) {
@@ -83,6 +85,19 @@ export function SignupClient() {
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="adminKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Chave de Administrador</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Chave secreta" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

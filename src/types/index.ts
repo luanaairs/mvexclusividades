@@ -57,4 +57,5 @@ export type OcrOutput = z.infer<typeof OcrOutputSchema>;
 export type UserCredentials = {
   email: string;
   password?: string;
+  adminKey?: string;
 };
