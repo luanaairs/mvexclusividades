@@ -1,3 +1,4 @@
+
 'use server';
 
 import { extractTextFromDocument as ocrFlow } from "@/ai/flows/extract-property-details";
@@ -5,12 +6,12 @@ import { type OcrInput, type OcrOutput, type Property } from "@/types";
 import { db, auth } from '@/lib/firebase';
 import { collection, doc, getDoc, setDoc, serverTimestamp, addDoc } from "firebase/firestore";
 
-const permissionErrorMessage = "Erro de permissão no banco de dados. Verifique se as Regras de Segurança do Firestore foram atualizadas conforme as instruções mais recentes.";
+const permissionErrorMessage = "Erro de permissão no banco de dados. Verifique se as Regras de Segurança do Firestore foram atualizadas conforme as instruções mais recentes e permita a propagação das alterações (pode levar um minuto).";
 const firebaseNotInitializedError = "O Firebase não está configurado corretamente. Verifique as variáveis de ambiente.";
 
 function isPermissionError(error: any): boolean {
     const code = error?.code?.toUpperCase();
-    return code === 'PERMISSION-DENIED';
+    return code === 'PERMISSION-DENIED' || code === 'UNAUTHENTICATED';
 }
 
 export async function performOcr(input: OcrInput): Promise<{ success: boolean; data?: OcrOutput; error?: string; }> {
@@ -35,7 +36,6 @@ export async function loadPropertiesForUser(userId: string): Promise<{ success: 
         if (docSnap.exists() && docSnap.data().properties) {
             return { success: true, properties: docSnap.data().properties as Property[] };
         } else {
-            // Document doesn't exist or has no properties, return empty array.
             return { success: true, properties: [] };
         }
     } catch (error: any) {
@@ -56,11 +56,10 @@ export async function savePropertiesForUser({ userId, properties }: { userId: st
         // Firestore cannot store 'undefined' values. This robustly strips any undefined fields.
         const cleanProperties = JSON.parse(JSON.stringify(properties));
         
-        // Use setDoc to create or completely overwrite the document.
-        // This is simpler and more reliable for this data model than using merge.
+        // We are removing the serverTimestamp for simplicity to avoid potential permission issues.
+        // The core functionality is saving the properties list.
         await setDoc(userDocRef, {
             properties: cleanProperties,
-            updatedAt: serverTimestamp()
         });
 
         return { success: true };
@@ -78,7 +77,6 @@ export async function savePropertiesForUser({ userId, properties }: { userId: st
 export async function createShareLink(properties: Property[]): Promise<{ success: boolean; shareId?: string; error?: string }> {
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     try {
-        // Firestore cannot store 'undefined' values. This robustly strips any undefined fields.
         const cleanProperties = JSON.parse(JSON.stringify(properties));
         const docRef = await addDoc(collection(db, "shared_lists"), {
             properties: cleanProperties,
