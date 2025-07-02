@@ -3,16 +3,19 @@
 
 import { extractTextFromDocument as ocrFlow } from "@/ai/flows/extract-property-details";
 import { type OcrInput, type Property, type PropertyTable } from "@/types";
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
 const permissionErrorMessage = "Erro de permissão no banco de dados. Verifique se as Regras de Segurança do Firestore foram atualizadas conforme as instruções mais recentes.";
+const firebaseNotInitializedError = "O Firebase não está configurado corretamente. Verifique as variáveis de ambiente.";
 
 function isPermissionError(error: any): boolean {
-    return error && (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED');
+    const code = error?.code?.toUpperCase();
+    return code === 'PERMISSION-DENIED';
 }
 
 export async function performOcr(input: OcrInput) {
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     try {
         const result = await ocrFlow(input);
         return { success: true, data: result };
@@ -25,17 +28,17 @@ export async function performOcr(input: OcrInput) {
 // --- Table Management Actions (with new data structure) ---
 
 // Helper function to get the user's tables subcollection
-const userTablesCollection = (userId: string) => collection(db, 'users', userId, 'tables');
+const userTablesCollection = (userId: string) => collection(db!, 'users', userId, 'tables');
 
 export async function getTablesForUser(userId: string): Promise<{ success: boolean; tables?: PropertyTable[]; error?: string; }> {
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
         const tablesRef = userTablesCollection(userId);
-        const q = query(tablesRef); // No 'where' clause needed anymore
+        const q = query(tablesRef);
         const querySnapshot = await getDocs(q);
         const tables = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PropertyTable));
         
-        // Client-side sort to avoid needing indexes
         const sortedTables = tables.sort((a, b) => {
             const aTime = a.createdAt?.seconds ?? 0;
             const bTime = b.createdAt?.seconds ?? 0;
@@ -53,18 +56,18 @@ export async function getTablesForUser(userId: string): Promise<{ success: boole
 }
 
 export async function createTable({ name, userId }: { name: string, userId: string }): Promise<{ success: boolean; table?: PropertyTable; error?: string; }> {
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     if (!name) return { success: false, error: "O nome da tabela é obrigatório." };
     try {
         const newTableData = {
             name,
-            userId: userId, // Keep for denormalization, might be useful later
+            userId: userId,
             properties: [],
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
         };
         const docRef = await addDoc(userTablesCollection(userId), newTableData);
-        // We get the data back to include the ID and server-generated timestamps
         const createdTableDoc = await getDoc(docRef);
         const createdTable = { id: createdTableDoc.id, ...createdTableDoc.data() } as PropertyTable;
 
@@ -79,14 +82,13 @@ export async function createTable({ name, userId }: { name: string, userId: stri
 }
 
 export async function savePropertiesToTable({ tableId, properties, userId }: { tableId: string, properties: Property[], userId: string }): Promise<{ success: boolean; error?: string; }> {
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
-        // The path now directly points to the user's specific table,
-        // so security rules will handle permission checks. No need to get and check owner.
         const tableRef = doc(db, 'users', userId, 'tables', tableId);
         
         await updateDoc(tableRef, {
-            properties: JSON.parse(JSON.stringify(properties)), // Ensure plain objects
+            properties: JSON.parse(JSON.stringify(properties)),
             updatedAt: serverTimestamp()
         });
         return { success: true };
@@ -100,6 +102,7 @@ export async function savePropertiesToTable({ tableId, properties, userId }: { t
 }
 
 export async function renameTable({ tableId, newName, userId }: { tableId: string, newName: string, userId: string }): Promise<{ success: boolean; error?: string; }> {
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     if (!newName) return { success: false, error: "O novo nome da tabela é obrigatório." };
     try {
@@ -116,7 +119,8 @@ export async function renameTable({ tableId, newName, userId }: { tableId: strin
 }
 
 export async function deleteTable({ tableId, userId }: { tableId: string, userId: string }): Promise<{ success: boolean; error?: string; }> {
-     if (!userId) return { success: false, error: "Usuário não autenticado." };
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
+    if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
         const tableRef = doc(db, 'users', userId, 'tables', tableId);
         await deleteDoc(tableRef);
@@ -133,6 +137,7 @@ export async function deleteTable({ tableId, userId }: { tableId: string, userId
 
 // --- Sharing Logic Rework ---
 export async function createShareLink(properties: Property[]): Promise<{ success: boolean; shareId?: string; error?: string }> {
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     try {
         const docRef = await addDoc(collection(db, "shared_lists"), {
             properties: JSON.parse(JSON.stringify(properties)),
@@ -149,6 +154,7 @@ export async function createShareLink(properties: Property[]): Promise<{ success
 }
 
 export async function getSharedList(shareId: string): Promise<{ success: boolean; properties?: Property[]; error?: string }> {
+    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     try {
         const docRef = doc(db, "shared_lists", shareId);
         const docSnap = await getDoc(docRef);
