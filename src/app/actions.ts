@@ -5,6 +5,12 @@ import { type OcrInput, type Property, type PropertyTable } from "@/types";
 import { db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from "firebase/firestore";
 
+const permissionErrorMessage = "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore.";
+
+function isPermissionError(error: any): boolean {
+    return error && (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED');
+}
+
 export async function performOcr(input: OcrInput) {
     try {
         const result = await ocrFlow(input);
@@ -27,8 +33,8 @@ export async function getTablesForUser(userId: string): Promise<{ success: boole
         return { success: true, tables };
     } catch (error: any) {
         console.error("Error fetching tables:", error);
-        if (error.code === 'permission-denied') {
-            return { success: false, error: "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore." };
+        if (isPermissionError(error)) {
+            return { success: false, error: permissionErrorMessage };
         }
         return { success: false, error: "Falha ao buscar as tabelas do usuário." };
     }
@@ -52,8 +58,8 @@ export async function createTable({ name, userId }: { name: string, userId: stri
         return { success: true, table: createdTable };
     } catch (error: any) {
         console.error("Error creating table:", error);
-         if (error.code === 'permission-denied') {
-            return { success: false, error: "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore." };
+         if (isPermissionError(error)) {
+            return { success: false, error: permissionErrorMessage };
         }
         return { success: false, error: "Falha ao criar a nova tabela." };
     }
@@ -76,8 +82,8 @@ export async function savePropertiesToTable({ tableId, properties, userId }: { t
         return { success: true };
     } catch (error: any) {
         console.error("Error saving properties:", error);
-         if (error.code === 'permission-denied') {
-            return { success: false, error: "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore." };
+         if (isPermissionError(error)) {
+            return { success: false, error: permissionErrorMessage };
         }
         return { success: false, error: "Falha ao salvar as alterações na tabela." };
     }
@@ -98,8 +104,8 @@ export async function renameTable({ tableId, newName, userId }: { tableId: strin
         return { success: true };
     } catch (error: any) {
         console.error("Error renaming table:", error);
-         if (error.code === 'permission-denied') {
-            return { success: false, error: "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore." };
+         if (isPermissionError(error)) {
+            return { success: false, error: permissionErrorMessage };
         }
         return { success: false, error: "Falha ao renomear a tabela." };
     }
@@ -119,8 +125,8 @@ export async function deleteTable({ tableId, userId }: { tableId: string, userId
         return { success: true };
     } catch (error: any) {
         console.error("Error deleting table:", error);
-         if (error.code === 'permission-denied') {
-            return { success: false, error: "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore." };
+         if (isPermissionError(error)) {
+            return { success: false, error: permissionErrorMessage };
         }
         return { success: false, error: "Falha ao excluir a tabela." };
     }
@@ -137,6 +143,9 @@ export async function createShareLink(properties: Property[]): Promise<{ success
         return { success: true, shareId: docRef.id };
     } catch (error: any) {
         console.error("Error creating share link in DB:", error);
+        if (isPermissionError(error)) {
+            return { success: false, error: permissionErrorMessage };
+        }
         return { success: false, error: "Falha ao criar o link de compartilhamento no servidor." };
     }
 }
@@ -152,6 +161,9 @@ export async function getSharedList(shareId: string): Promise<{ success: boolean
         }
     } catch (error) {
         console.error("Error fetching shared list:", error);
+         if (isPermissionError(error)) {
+            return { success: false, error: permissionErrorMessage };
+        }
         return { success: false, error: "Falha ao buscar a lista compartilhada." };
     }
 }
