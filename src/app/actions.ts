@@ -28,7 +28,7 @@ export async function performOcr(input: OcrInput) {
 // --- Table Management Actions (with new data structure) ---
 
 // Helper function to get the user's tables subcollection
-const userTablesCollection = (userId: string) => collection(db!, 'users', userId, 'tables');
+const userTablesCollection = (userId: string) => collection(db!, 'userData', userId, 'tables');
 
 export async function getTablesForUser(userId: string): Promise<{ success: boolean; tables?: PropertyTable[]; error?: string; }> {
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
@@ -85,7 +85,7 @@ export async function savePropertiesToTable({ tableId, properties, userId }: { t
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
-        const tableRef = doc(db, 'users', userId, 'tables', tableId);
+        const tableRef = doc(db, 'userData', userId, 'tables', tableId);
         
         await updateDoc(tableRef, {
             properties: JSON.parse(JSON.stringify(properties)),
@@ -106,7 +106,7 @@ export async function renameTable({ tableId, newName, userId }: { tableId: strin
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     if (!newName) return { success: false, error: "O novo nome da tabela é obrigatório." };
     try {
-        const tableRef = doc(db, 'users', userId, 'tables', tableId);
+        const tableRef = doc(db, 'userData', userId, 'tables', tableId);
         await updateDoc(tableRef, { name: newName, updatedAt: serverTimestamp() });
         return { success: true };
     } catch (error: any) {
@@ -122,7 +122,7 @@ export async function deleteTable({ tableId, userId }: { tableId: string, userId
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
-        const tableRef = doc(db, 'users', userId, 'tables', tableId);
+        const tableRef = doc(db, 'userData', userId, 'tables', tableId);
         await deleteDoc(tableRef);
         return { success: true };
     } catch (error: any) {
