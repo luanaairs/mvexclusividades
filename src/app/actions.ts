@@ -3,7 +3,7 @@
 import { extractTextFromDocument as ocrFlow } from "@/ai/flows/extract-property-details";
 import { type OcrInput, type Property, type PropertyTable } from "@/types";
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
 const permissionErrorMessage = "Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore.";
 
@@ -27,7 +27,7 @@ export async function getTablesForUser(userId: string): Promise<{ success: boole
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
         const tablesRef = collection(db, "tables");
-        const q = query(tablesRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
+        const q = query(tablesRef, where("userId", "==", userId));
         const querySnapshot = await getDocs(q);
         const tables = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PropertyTable));
         return { success: true, tables };

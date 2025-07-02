@@ -88,10 +88,15 @@ export function PageClient() {
     setIsLoading(true);
     const result = await getTablesForUser(user.uid);
     if (result.success && result.tables) {
-      setTables(result.tables);
-      if (result.tables.length > 0) {
-        if (!activeTableId || !result.tables.some(t => t.id === activeTableId)) {
-          setActiveTableId(result.tables[0].id);
+      const sortedTables = result.tables.sort((a, b) => {
+        const aTime = a.createdAt?.seconds ?? 0;
+        const bTime = b.createdAt?.seconds ?? 0;
+        return bTime - aTime; // Sort by most recently created
+      });
+      setTables(sortedTables);
+      if (sortedTables.length > 0) {
+        if (!activeTableId || !sortedTables.some(t => t.id === activeTableId)) {
+          setActiveTableId(sortedTables[0].id);
         }
       } else {
         setActiveTableId(null);
