@@ -2,9 +2,9 @@
 'use server';
 
 import { extractTextFromDocument as ocrFlow } from "@/ai/flows/extract-property-details";
-import { type OcrInput, type Property, type PropertyTable } from "@/types";
+import { type OcrInput, type Property } from "@/types";
 import { db, auth } from '@/lib/firebase';
-import { collection, query, where, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDoc, setDoc, serverTimestamp, addDoc } from "firebase/firestore";
 
 const permissionErrorMessage = "Erro de permissão no banco de dados. Verifique se as Regras de Segurança do Firestore foram atualizadas conforme as instruções mais recentes.";
 const firebaseNotInitializedError = "O Firebase não está configurado corretamente. Verifique as variáveis de ambiente.";
@@ -25,121 +25,56 @@ export async function performOcr(input: OcrInput) {
     }
 }
 
-// --- Table Management Actions (with new data structure) ---
+// --- Simplified Data Management Actions ---
 
-// Helper function to get the user's tables subcollection
-const userTablesCollection = (userId: string) => collection(db!, 'userData', userId, 'tables');
-
-export async function getTablesForUser(userId: string): Promise<{ success: boolean; tables?: PropertyTable[]; error?: string; }> {
+export async function loadPropertiesForUser(userId: string): Promise<{ success: boolean; properties?: Property[]; error?: string; }> {
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
-        const tablesRef = userTablesCollection(userId);
-        const q = query(tablesRef);
-        const querySnapshot = await getDocs(q);
-        const tables = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PropertyTable));
-        
-        const sortedTables = tables.sort((a, b) => {
-            const aTime = a.createdAt?.seconds ?? 0;
-            const bTime = b.createdAt?.seconds ?? 0;
-            return bTime - aTime;
-        });
-
-        return { success: true, tables: sortedTables };
+        const userDocRef = doc(db, 'userData', userId);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists() && docSnap.data().properties) {
+            return { success: true, properties: docSnap.data().properties as Property[] };
+        } else {
+            // Document doesn't exist or has no properties, return empty array.
+            return { success: true, properties: [] };
+        }
     } catch (error: any) {
-        console.error("Error fetching tables:", error);
+        console.error("Error loading properties:", error);
         if (isPermissionError(error)) {
             return { success: false, error: permissionErrorMessage };
         }
-        return { success: false, error: "Falha ao buscar as tabelas do usuário." };
+        return { success: false, error: "Falha ao carregar os dados da nuvem." };
     }
 }
 
-export async function createTable({ name, userId }: { name: string, userId: string }): Promise<{ success: boolean; table?: PropertyTable; error?: string; }> {
-    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
-    if (!userId) return { success: false, error: "Usuário não autenticado." };
-    if (!name) return { success: false, error: "O nome da tabela é obrigatório." };
-    try {
-        const newTableData = {
-            name,
-            userId: userId,
-            properties: [],
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        };
-        const docRef = await addDoc(userTablesCollection(userId), newTableData);
-        const createdTableDoc = await getDoc(docRef);
-        const createdTable = { id: createdTableDoc.id, ...createdTableDoc.data() } as PropertyTable;
-
-        return { success: true, table: createdTable };
-    } catch (error: any) {
-        console.error("Error creating table:", error);
-         if (isPermissionError(error)) {
-            return { success: false, error: permissionErrorMessage };
-        }
-        return { success: false, error: "Falha ao criar a nova tabela." };
-    }
-}
-
-export async function savePropertiesToTable({ tableId, properties, userId }: { tableId: string, properties: Property[], userId: string }): Promise<{ success: boolean; error?: string; }> {
+export async function savePropertiesForUser({ userId, properties }: { userId: string, properties: Property[] }): Promise<{ success: boolean; error?: string; }> {
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     if (!userId) return { success: false, error: "Usuário não autenticado." };
     try {
-        const tableRef = doc(db, 'userData', userId, 'tables', tableId);
+        const userDocRef = doc(db, 'userData', userId);
         
         // Firestore cannot store 'undefined' values. This robustly strips any undefined fields.
         const cleanProperties = JSON.parse(JSON.stringify(properties));
-
-        await updateDoc(tableRef, {
+        
+        // Use setDoc with merge: true to create or update the document without overwriting other fields.
+        await setDoc(userDocRef, {
             properties: cleanProperties,
             updatedAt: serverTimestamp()
-        });
+        }, { merge: true });
+
         return { success: true };
-    } catch (error: any)
-    {
+    } catch (error: any) {
         console.error("Error saving properties:", error);
-         if (isPermissionError(error)) {
+        if (isPermissionError(error)) {
             return { success: false, error: permissionErrorMessage };
         }
-        return { success: false, error: "Falha ao salvar as alterações na tabela." };
-    }
-}
-
-export async function renameTable({ tableId, newName, userId }: { tableId: string, newName: string, userId: string }): Promise<{ success: boolean; error?: string; }> {
-    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
-    if (!userId) return { success: false, error: "Usuário não autenticado." };
-    if (!newName) return { success: false, error: "O novo nome da tabela é obrigatório." };
-    try {
-        const tableRef = doc(db, 'userData', userId, 'tables', tableId);
-        await updateDoc(tableRef, { name: newName, updatedAt: serverTimestamp() });
-        return { success: true };
-    } catch (error: any) {
-        console.error("Error renaming table:", error);
-         if (isPermissionError(error)) {
-            return { success: false, error: permissionErrorMessage };
-        }
-        return { success: false, error: "Falha ao renomear a tabela." };
-    }
-}
-
-export async function deleteTable({ tableId, userId }: { tableId: string, userId: string }): Promise<{ success: boolean; error?: string; }> {
-    if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
-    if (!userId) return { success: false, error: "Usuário não autenticado." };
-    try {
-        const tableRef = doc(db, 'userData', userId, 'tables', tableId);
-        await deleteDoc(tableRef);
-        return { success: true };
-    } catch (error: any) {
-        console.error("Error deleting table:", error);
-         if (isPermissionError(error)) {
-            return { success: false, error: permissionErrorMessage };
-        }
-        return { success: false, error: "Falha ao excluir a tabela." };
+        return { success: false, error: "Falha ao salvar as alterações na nuvem." };
     }
 }
 
 
-// --- Sharing Logic Rework ---
+// --- Sharing Logic (Unchanged) ---
 export async function createShareLink(properties: Property[]): Promise<{ success: boolean; shareId?: string; error?: string }> {
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     try {

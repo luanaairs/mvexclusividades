@@ -1,11 +1,11 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import { PlusCircle, FileUp, Download, FileJson, Share2, User, LogOut, Loader2, Database, ChevronsUpDown, Edit, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { PlusCircle, FileUp, Download, FileJson, Share2, User, LogOut, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
-import { type PropertyTable } from "@/types";
 import type { User as FirebaseUser } from 'firebase/auth';
 
 interface PageHeaderProps {
@@ -19,13 +19,7 @@ interface PageHeaderProps {
   onExportJson: () => void;
   onShare: () => void;
   hasProperties: boolean;
-  tables: PropertyTable[];
-  activeTable: PropertyTable | null;
   isSaving: boolean;
-  onTableSelect: (tableId: string) => void;
-  onNewTable: () => void;
-  onRenameTable: () => void;
-  onDeleteTable: () => void;
 }
 
 export function PageHeader({ 
@@ -39,13 +33,7 @@ export function PageHeader({
   onExportJson,
   onShare,
   hasProperties,
-  tables,
-  activeTable,
   isSaving,
-  onTableSelect,
-  onNewTable,
-  onRenameTable,
-  onDeleteTable
 }: PageHeaderProps) {
   return (
     <header className="bg-card shadow-sm rounded-lg p-4">
@@ -56,45 +44,14 @@ export function PageHeader({
         </div>
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
             
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="min-w-[200px] justify-between">
-                <div className="flex items-center gap-2">
-                  <Database />
-                  <span className="truncate max-w-[150px]">{activeTable ? activeTable.name : "Nenhuma Tabela"}</span>
-                </div>
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[--radix-dropdown-menu-trigger-width]">
-              <DropdownMenuLabel>Minhas Tabelas</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={activeTable?.id} onValueChange={onTableSelect}>
-                {tables.map((table) => (
-                  <DropdownMenuRadioItem key={table.id} value={table.id}>
-                    {table.name}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={onNewTable}><PlusCircle className="mr-2"/> Criar Nova Tabela</DropdownMenuItem>
-              {activeTable && (
-                <>
-                  <DropdownMenuItem onSelect={onRenameTable}><Edit className="mr-2"/> Renomear Tabela</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={onDeleteTable} className="text-destructive focus:text-destructive"><Trash2 className="mr-2"/> Excluir Tabela</DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button onClick={onAdd} disabled={!activeTable}>
+          <Button onClick={onAdd}>
             <PlusCircle />
             Adicionar Imóvel
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" disabled={!activeTable}>
+              <Button variant="secondary">
                 <FileUp />
                 Importar/Exportar
               </Button>
@@ -128,8 +85,8 @@ export function PageHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                  <DropdownMenuLabel className="flex items-center gap-2">
-                  {isSaving ? <Loader2 className="animate-spin" /> : <div className="h-4 w-4"/>}
-                   <span>{isSaving ? "Salvando..." : "Salvo"}</span>
+                  {isSaving ? <Loader2 className="animate-spin" /> : <div className="h-4 w-4 rounded-full bg-green-500"/>}
+                   <span>{isSaving ? "Salvando..." : "Salvo na Nuvem"}</span>
                  </DropdownMenuLabel>
                  <DropdownMenuSeparator />
                 <DropdownMenuLabel>

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type PropertyCategory = 'FR' | 'L' | 'FU' | 'M' | 'MD' | 'VM';
@@ -29,15 +30,6 @@ export type Property = {
   address?: string;
   neighborhood?: string;
 };
-
-export type PropertyTable = {
-  id: string;
-  name: string;
-  userId: string;
-  properties: Property[];
-  createdAt: { seconds: number; nanoseconds: number };
-  updatedAt: { seconds: number; nanoseconds: number };
-}
 
 export const OcrInputSchema = z.object({
   documentDataUri: z

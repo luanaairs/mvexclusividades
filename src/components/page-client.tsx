@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { type Property, type PropertyStatus, type PropertyType, type PropertyCategory, type PropertyTable } from '@/types';
-import { getTablesForUser, createTable, savePropertiesToTable, renameTable, deleteTable, createShareLink } from '@/app/actions';
+import { type Property, type PropertyStatus, type PropertyType, type PropertyCategory } from '@/types';
+import { loadPropertiesForUser, savePropertiesForUser, createShareLink } from '@/app/actions';
 import { PageHeader } from './page-header';
 import { PropertyTable } from './property-table';
 import { PropertyFormDialog } from './property-form-dialog';
@@ -15,21 +16,10 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { X, Loader2, FileText, Database } from 'lucide-react';
 import { PropertyDetailsDialog } from './property-details-dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from '@/context/auth-context';
 import { Input } from './ui/input';
 
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
-type DialogState = { type: 'create' | 'rename' | 'delete' | 'share'; table?: PropertyTable; } | null;
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
     DISPONIVEL: 'Disponível',
@@ -60,14 +50,9 @@ export function PageClient() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   
-  const [tables, setTables] = useState<PropertyTable[]>([]);
-  const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isActionPending, setIsActionPending] = useState(false);
-
-  const [dialogState, setDialogState] = useState<DialogState>(null);
-  const [dialogInputValue, setDialogInputValue] = useState('');
   
   const [isAddEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -75,48 +60,35 @@ export function PageClient() {
   const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
+  const [isShareDialogOpen, setShareDialogOpen] = useState(false);
   const [generatedShareUrl, setGeneratedShareUrl] = useState('');
 
   const jsonImportRef = useRef<HTMLInputElement>(null);
-  
-  const activeTable = useMemo(() => tables.find(t => t.id === activeTableId), [tables, activeTableId]);
-  const properties = useMemo(() => activeTable?.properties || [], [activeTable]);
 
-
-  const fetchTables = useCallback(async () => {
+  // Load properties from cloud on initial render
+  useEffect(() => {
     if (!user) return;
     setIsLoading(true);
-    const result = await getTablesForUser(user.uid);
-    if (result.success && result.tables) {
-      const sortedTables = result.tables.sort((a, b) => {
-        const aTime = a.createdAt?.seconds ?? 0;
-        const bTime = b.createdAt?.seconds ?? 0;
-        return bTime - aTime; // Sort by most recently created
-      });
-      setTables(sortedTables);
-      if (sortedTables.length > 0) {
-        if (!activeTableId || !sortedTables.some(t => t.id === activeTableId)) {
-          setActiveTableId(sortedTables[0].id);
-        }
+    loadPropertiesForUser(user.uid).then(result => {
+      if (result.success && result.properties) {
+        setProperties(result.properties);
       } else {
-        setActiveTableId(null);
+        toast({ variant: "destructive", title: "Erro ao Carregar", description: result.error });
       }
-    } else {
-      toast({ variant: "destructive", title: "Erro", description: result.error });
-    }
-    setIsLoading(false);
-  }, [user, activeTableId, toast]);
+      setIsLoading(false);
+    });
+  }, [user, toast]);
 
-  useEffect(() => {
-    fetchTables();
-  }, [user, fetchTables]);
-
-  const saveProperties = useCallback(async (tableId: string, updatedProperties: Property[]) => {
+  const handlePropertyChange = useCallback(async (updatedProperties: Property[]) => {
     if (!user) return;
+    setProperties(updatedProperties); // Update UI immediately
+    
     setIsSaving(true);
-    const result = await savePropertiesToTable({ tableId, properties: updatedProperties, userId: user.uid });
+    const result = await savePropertiesForUser({ userId: user.uid, properties: updatedProperties });
     if (!result.success) {
       toast({ variant: "destructive", title: "Erro ao Salvar", description: result.error });
+      // Optional: Revert to previous state if save fails
+      // loadPropertiesForUser(user.uid).then(res => res.success && setProperties(res.properties || []));
     }
     setIsSaving(false);
   }, [user, toast]);
@@ -134,13 +106,6 @@ export function PageClient() {
     }
     return [...new Set(baseTags)];
   };
-
-  const handlePropertyChange = (newProperties: Property[]) => {
-    if (!activeTable) return;
-    const updatedTable = { ...activeTable, properties: newProperties };
-    setTables(tables.map(t => t.id === activeTableId ? updatedTable : t));
-    saveProperties(activeTable.id, newProperties);
-  }
 
   const addProperty = (data: Omit<Property, 'id'>) => {
     const newProperty: Property = {
@@ -175,65 +140,24 @@ export function PageClient() {
     toast({ title: "Sucesso!", description: `Imóvel "${propertyName}" excluído.` });
   };
 
-  const handleDialogAction = async () => {
-    if (!dialogState || !user) return;
-    setIsActionPending(true);
-
-    let result: { success: boolean, error?: string, table?: PropertyTable, shareId?: string };
-
-    switch (dialogState.type) {
-      case 'create':
-        result = await createTable({ name: dialogInputValue, userId: user.uid });
-        if(result.success && result.table) {
-          toast({ title: "Sucesso!", description: `Tabela "${result.table.name}" criada.` });
-          await fetchTables();
-          setActiveTableId(result.table.id);
-        }
-        break;
-      case 'rename':
-        if(!dialogState.table) break;
-        result = await renameTable({ tableId: dialogState.table.id, newName: dialogInputValue, userId: user.uid });
-         if(result.success) {
-            toast({ title: "Sucesso!", description: `Tabela renomeada para "${dialogInputValue}".` });
-            await fetchTables();
-         }
-        break;
-      case 'delete':
-        if(!dialogState.table) break;
-        result = await deleteTable({ tableId: dialogState.table.id, userId: user.uid });
-        if(result.success) {
-            toast({ title: "Sucesso!", description: `Tabela "${dialogState.table.name}" excluída.` });
-            await fetchTables();
-         }
-        break;
-      case 'share':
-        result = await createShareLink(properties);
-        if(result.success && result.shareId) {
-            setGeneratedShareUrl(`${window.location.origin}/share/${result.shareId}`);
-        } else {
-            toast({ variant: "destructive", title: "Erro", description: "Não foi possível criar o link de compartilhamento." });
-        }
-        break;
+  const handleShare = async () => {
+    const result = await createShareLink(properties);
+    if(result.success && result.shareId) {
+        setGeneratedShareUrl(`${window.location.origin}/share/${result.shareId}`);
+        setShareDialogOpen(true);
+    } else {
+        toast({ variant: "destructive", title: "Erro", description: result.error || "Não foi possível criar o link de compartilhamento." });
     }
-
-    if (result && !result.success && dialogState.type !== 'share') {
-        toast({ variant: "destructive", title: "Erro na Operação", description: result.error });
-    }
-
-    setIsActionPending(false);
-    setDialogState(null);
-    setDialogInputValue('');
-  };
+  }
   
   const handleExportJson = () => {
-    if (!activeTable) return;
-    exportToJson(activeTable.properties, activeTable.name);
+    exportToJson(properties, 'meus_imoveis');
     toast({ title: "Sucesso!", description: "Backup JSON exportado." });
   };
 
   const handleJsonFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !activeTable) return;
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -242,8 +166,12 @@ export function PageClient() {
         if (typeof text !== 'string') throw new Error("File could not be read.");
         const data = JSON.parse(text);
         if (Array.isArray(data)) {
-            handlePropertyChange(data);
-            toast({ title: "Sucesso!", description: `${data.length} imóvel${data.length > 1 ? 's' : ''} importado${data.length > 1 ? 's' : ''} para a tabela "${activeTable.name}".` });
+            // Assuming the JSON is an array of properties, we merge it with existing ones.
+            // A more sophisticated approach might be needed depending on desired behavior (e.g., overwrite, merge by ID).
+            const combinedProperties = [...data, ...properties];
+            const uniqueProperties = Array.from(new Map(combinedProperties.map(p => [p.id, p])).values());
+            handlePropertyChange(uniqueProperties);
+            toast({ title: "Sucesso!", description: `Imóveis importados do backup.` });
         } else {
             throw new Error("Invalid JSON format for properties.");
         }
@@ -318,27 +246,14 @@ export function PageClient() {
             onAdd={() => setAddEditDialogOpen(true)}
             onImportDoc={() => setImportDialogOpen(true)}
             onImportJson={() => jsonImportRef.current?.click()}
-            onExportCsv={() => exportToCsv(properties, activeTable?.name)}
-            onExportWord={() => exportToWord(properties, activeTable?.name)}
+            onExportCsv={() => exportToCsv(properties, 'meus_imoveis')}
+            onExportWord={() => exportToWord(properties, 'meus_imoveis')}
             onExportJson={handleExportJson}
-            onShare={() => setDialogState({ type: 'share' })}
+            onShare={handleShare}
             hasProperties={properties.length > 0}
-            tables={tables}
-            activeTable={activeTable}
             isSaving={isSaving}
-            onTableSelect={setActiveTableId}
-            onNewTable={() => setDialogState({ type: 'create'})}
-            onRenameTable={() => {
-                if (!activeTable) return;
-                setDialogInputValue(activeTable.name);
-                setDialogState({ type: 'rename', table: activeTable });
-            }}
-            onDeleteTable={() => {
-                if (!activeTable) return;
-                setDialogState({ type: 'delete', table: activeTable });
-            }}
         />
-        {activeTable && properties.length > 0 && (
+        {properties.length > 0 && (
           <Card className="mt-6">
               <CardHeader className='pb-4'><CardTitle>Filtros</CardTitle></CardHeader>
               <CardContent>
@@ -360,76 +275,17 @@ export function PageClient() {
       </div>
 
       <main className="flex-grow overflow-y-auto pt-6">
-        {activeTable ? (
-          <PropertyTable 
-            properties={sortedProperties}
-            onEdit={(property) => { setEditingProperty(property); setAddEditDialogOpen(true); }}
-            onDelete={deleteProperty}
-            onViewDetails={setViewingProperty}
-            requestSort={requestSort}
-            sortConfig={sortConfig}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <Database className="h-16 w-16 text-muted-foreground" />
-            <h2 className="mt-4 text-2xl font-bold">Nenhuma tabela encontrada</h2>
-            <p className="mt-2 text-muted-foreground">Crie sua primeira tabela para começar a adicionar imóveis.</p>
-            <Button className="mt-6" onClick={() => setDialogState({ type: 'create'})}>Criar Nova Tabela</Button>
-          </div>
-        )}
+        <PropertyTable 
+          properties={sortedProperties}
+          onEdit={(property) => { setEditingProperty(property); setAddEditDialogOpen(true); }}
+          onDelete={deleteProperty}
+          onViewDetails={setViewingProperty}
+          requestSort={requestSort}
+          sortConfig={sortConfig}
+        />
       </main>
       
       <input type="file" ref={jsonImportRef} accept=".json" className="hidden" onChange={handleJsonFileChange} />
-
-      <AlertDialog open={!!dialogState} onOpenChange={(open) => !open && setDialogState(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {dialogState?.type === 'create' && 'Criar Nova Tabela'}
-              {dialogState?.type === 'rename' && 'Renomear Tabela'}
-              {dialogState?.type === 'delete' && 'Excluir Tabela'}
-              {dialogState?.type === 'share' && 'Link de Compartilhamento Gerado'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {dialogState?.type === 'create' && 'Digite o nome para sua nova tabela de imóveis.'}
-              {dialogState?.type === 'rename' && `Digite o novo nome para a tabela "${dialogState.table?.name}".`}
-              {dialogState?.type === 'delete' && `Tem certeza que deseja excluir a tabela "${dialogState.table?.name}"? Esta ação não pode ser desfeita.`}
-              {dialogState?.type === 'share' && 'Copie e envie este link para seus clientes. Ele dá acesso de somente leitura à lista atual.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          
-          {(dialogState?.type === 'create' || dialogState?.type === 'rename') && (
-            <Input 
-              autoFocus
-              value={dialogInputValue}
-              onChange={(e) => setDialogInputValue(e.target.value)}
-              placeholder="Ex: Exclusividades Maio 2024"
-              onKeyDown={(e) => e.key === 'Enter' && handleDialogAction()}
-            />
-          )}
-
-          {dialogState?.type === 'share' && (
-             <div className="flex items-center space-x-2 mt-4">
-                <Input id="share-link" value={generatedShareUrl} readOnly />
-             </div>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDialogInputValue('')}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDialogAction}
-              disabled={isActionPending || ((dialogState?.type === 'create' || dialogState?.type === 'rename') && !dialogInputValue)}
-              className={dialogState?.type === 'delete' ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
-            >
-              {isActionPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {dialogState?.type === 'create' && 'Criar'}
-              {dialogState?.type === 'rename' && 'Renomear'}
-              {dialogState?.type === 'delete' && 'Excluir'}
-              {dialogState?.type === 'share' && 'Fechar'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <PropertyFormDialog
         isOpen={isAddEditDialogOpen}
@@ -451,8 +307,8 @@ export function PageClient() {
       />
 
       <ShareDialog 
-        isOpen={generatedShareUrl !== '' && dialogState?.type !== 'share'}
-        onOpenChange={(open) => !open && setGeneratedShareUrl('')}
+        isOpen={isShareDialogOpen}
+        onOpenChange={setShareDialogOpen}
         url={generatedShareUrl}
       />
 
