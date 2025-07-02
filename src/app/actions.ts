@@ -87,12 +87,16 @@ export async function savePropertiesToTable({ tableId, properties, userId }: { t
     try {
         const tableRef = doc(db, 'userData', userId, 'tables', tableId);
         
+        // Firestore cannot store 'undefined' values. This robustly strips any undefined fields.
+        const cleanProperties = JSON.parse(JSON.stringify(properties));
+
         await updateDoc(tableRef, {
-            properties: JSON.parse(JSON.stringify(properties)),
+            properties: cleanProperties,
             updatedAt: serverTimestamp()
         });
         return { success: true };
-    } catch (error: any) {
+    } catch (error: any)
+    {
         console.error("Error saving properties:", error);
          if (isPermissionError(error)) {
             return { success: false, error: permissionErrorMessage };
@@ -139,8 +143,10 @@ export async function deleteTable({ tableId, userId }: { tableId: string, userId
 export async function createShareLink(properties: Property[]): Promise<{ success: boolean; shareId?: string; error?: string }> {
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     try {
+        // Firestore cannot store 'undefined' values. This robustly strips any undefined fields.
+        const cleanProperties = JSON.parse(JSON.stringify(properties));
         const docRef = await addDoc(collection(db, "shared_lists"), {
-            properties: JSON.parse(JSON.stringify(properties)),
+            properties: cleanProperties,
             createdAt: serverTimestamp()
         });
         return { success: true, shareId: docRef.id };
