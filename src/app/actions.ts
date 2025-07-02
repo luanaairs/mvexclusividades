@@ -1,8 +1,7 @@
-
 'use server';
 
 import { extractTextFromDocument as ocrFlow } from "@/ai/flows/extract-property-details";
-import { type OcrInput, type Property } from "@/types";
+import { type OcrInput, type OcrOutput, type Property } from "@/types";
 import { db, auth } from '@/lib/firebase';
 import { collection, doc, getDoc, setDoc, serverTimestamp, addDoc } from "firebase/firestore";
 
@@ -14,7 +13,7 @@ function isPermissionError(error: any): boolean {
     return code === 'PERMISSION-DENIED';
 }
 
-export async function performOcr(input: OcrInput) {
+export async function performOcr(input: OcrInput): Promise<{ success: boolean; data?: OcrOutput; error?: string; }> {
     if (!db || !auth) return { success: false, error: firebaseNotInitializedError };
     try {
         const result = await ocrFlow(input);
@@ -57,11 +56,12 @@ export async function savePropertiesForUser({ userId, properties }: { userId: st
         // Firestore cannot store 'undefined' values. This robustly strips any undefined fields.
         const cleanProperties = JSON.parse(JSON.stringify(properties));
         
-        // Use setDoc with merge: true to create or update the document without overwriting other fields.
+        // Use setDoc to create or completely overwrite the document.
+        // This is simpler and more reliable for this data model than using merge.
         await setDoc(userDocRef, {
             properties: cleanProperties,
             updatedAt: serverTimestamp()
-        }, { merge: true });
+        });
 
         return { success: true };
     } catch (error: any) {
@@ -104,7 +104,7 @@ export async function getSharedList(shareId: string): Promise<{ success: boolean
         } else {
             return { success: false, error: "Link de compartilhamento não encontrado." };
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching shared list:", error);
          if (isPermissionError(error)) {
             return { success: false, error: permissionErrorMessage };
