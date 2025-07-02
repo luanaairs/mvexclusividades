@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { PlusCircle, FileUp, Download, FileJson, Share2, User, LogOut, Loader2 } from "lucide-react";
+import { PlusCircle, FileUp, Download, FileJson, User, LogOut, Check, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -17,9 +17,14 @@ interface PageHeaderProps {
   onExportCsv: () => void;
   onExportWord: () => void;
   onExportJson: () => void;
-  onShare: () => void;
   hasProperties: boolean;
-  isSaving: boolean;
+
+  tables: { id: string; name: string }[];
+  activeTableId: string | null;
+  onTableChange: (tableId: string) => void;
+  onTableCreate: () => void;
+  onTableRename: () => void;
+  onTableDelete: () => void;
 }
 
 export function PageHeader({ 
@@ -31,10 +36,17 @@ export function PageHeader({
   onExportCsv, 
   onExportWord,
   onExportJson,
-  onShare,
   hasProperties,
-  isSaving,
+  tables,
+  activeTableId,
+  onTableChange,
+  onTableCreate,
+  onTableRename,
+  onTableDelete
 }: PageHeaderProps) {
+
+  const activeTableName = tables.find(t => t.id === activeTableId)?.name || 'Nenhuma tabela';
+
   return (
     <header className="bg-card shadow-sm rounded-lg p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -44,6 +56,36 @@ export function PageHeader({
         </div>
         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
             
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-w-[180px] justify-between">
+                <span className="truncate pr-2">{activeTableName}</span>
+                <ChevronDown />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[200px]">
+              <DropdownMenuLabel>Alternar Tabela</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {tables.map((table) => (
+                <DropdownMenuItem key={table.id} onClick={() => onTableChange(table.id)}>
+                  <span className="truncate flex-1">{table.name}</span>
+                  {table.id === activeTableId && <Check className="ml-2 h-4 w-4" />}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Gerenciar</DropdownMenuLabel>
+              <DropdownMenuItem onClick={onTableCreate}>
+                Criar Nova Tabela...
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onTableRename} disabled={tables.length === 0}>
+                Renomear Tabela Atual...
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onTableDelete} disabled={tables.length <= 1} className="text-destructive focus:text-destructive">
+                Excluir Tabela Atual
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <Button onClick={onAdd}>
             <PlusCircle />
             Adicionar Imóvel
@@ -67,11 +109,6 @@ export function PageHeader({
               <DropdownMenuItem onClick={onExportJson} disabled={!hasProperties}>Para Backup (JSON)</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button variant="secondary" onClick={onShare} disabled={!hasProperties}>
-            <Share2 />
-            Compartilhar
-          </Button>
           
           <ThemeToggle />
 
@@ -84,11 +121,6 @@ export function PageHeader({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                 <DropdownMenuLabel className="flex items-center gap-2">
-                  {isSaving ? <Loader2 className="animate-spin" /> : <div className="h-4 w-4 rounded-full bg-green-500"/>}
-                   <span>{isSaving ? "Salvando..." : "Salvo na Nuvem"}</span>
-                 </DropdownMenuLabel>
-                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>
                   Logado como <span className="font-bold">{user.email}</span>
                 </DropdownMenuLabel>

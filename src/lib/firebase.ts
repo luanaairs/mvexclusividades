@@ -1,6 +1,5 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -14,7 +13,6 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp | null = null;
-let db: Firestore | null = null;
 let auth: Auth | null = null;
 let firebaseError: string | null = null;
 
@@ -25,7 +23,6 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 } else {
     try {
         app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        db = getFirestore(app);
         auth = getAuth(app);
     } catch (e: any) {
         console.error("Firebase initialization error:", e);
@@ -33,4 +30,4 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
     }
 }
 
-export { app, db, auth, firebaseError };
+export { app, auth, firebaseError };
