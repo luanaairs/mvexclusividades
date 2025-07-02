@@ -30,9 +30,10 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 
 interface SharePageClientProps {
   initialProperties: Property[];
+  listName: string;
 }
 
-export function SharePageClient({ initialProperties }: SharePageClientProps) {
+export function SharePageClient({ initialProperties, listName }: SharePageClientProps) {
   const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
@@ -109,7 +110,10 @@ export function SharePageClient({ initialProperties }: SharePageClientProps) {
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3 text-2xl font-bold text-primary">
               <Image src="/logo.svg" alt="MV Broker Logo" width={48} height={48} />
-              <h1 className="font-headline">Exclusividades</h1>
+              <div className="flex flex-col">
+                <h1 className="font-headline text-2xl">Exclusividades</h1>
+                <p className="text-sm font-normal text-muted-foreground -mt-1">{listName}</p>
+              </div>
             </div>
             <ThemeToggle />
           </div>
@@ -145,8 +149,8 @@ export function SharePageClient({ initialProperties }: SharePageClientProps) {
             requestSort={requestSort}
             sortConfig={sortConfig}
             showActions={false}
-            onEdit={() => {}} // dummy functions
-            onDelete={() => {}} // dummy functions
+            onEdit={() => {}} 
+            onDelete={() => {}}
           />
         </main>
       </div>

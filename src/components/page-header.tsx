@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { PlusCircle, FileUp, Download, FileJson, User, LogOut, Check, ChevronDown } from "lucide-react";
+import { PlusCircle, FileUp, Download, FileJson, User, LogOut, Check, ChevronDown, Share2 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -17,6 +17,7 @@ interface PageHeaderProps {
   onExportCsv: () => void;
   onExportWord: () => void;
   onExportJson: () => void;
+  onShare: () => void;
   hasProperties: boolean;
 
   tables: { id: string; name: string }[];
@@ -36,6 +37,7 @@ export function PageHeader({
   onExportCsv, 
   onExportWord,
   onExportJson,
+  onShare,
   hasProperties,
   tables,
   activeTableId,
@@ -94,19 +96,21 @@ export function PageHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary">
-                <FileUp />
-                Importar/Exportar
+                <Download />
+                Ações
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Importar</DropdownMenuLabel>
-              <DropdownMenuItem onClick={onImportDoc}>De Documento (OCR)</DropdownMenuItem>
-              <DropdownMenuItem onClick={onImportJson}>De Arquivo JSON</DropdownMenuItem>
+              <DropdownMenuItem onClick={onImportDoc}><FileUp className="mr-2"/> De Documento (OCR)</DropdownMenuItem>
+              <DropdownMenuItem onClick={onImportJson}><FileJson className="mr-2"/> De Backup JSON</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Exportar</DropdownMenuLabel>
               <DropdownMenuItem onClick={onExportCsv} disabled={!hasProperties}>Para Excel (CSV)</DropdownMenuItem>
               <DropdownMenuItem onClick={onExportWord} disabled={!hasProperties}>Para Word</DropdownMenuItem>
               <DropdownMenuItem onClick={onExportJson} disabled={!hasProperties}>Para Backup (JSON)</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onShare} disabled={!hasProperties}><Share2 className="mr-2"/> Compartilhar Lista</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           

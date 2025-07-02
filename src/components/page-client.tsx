@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import { type Property, type PropertyStatus, type PropertyType, type PropertyCategory } from '@/types';
 import { PageHeader } from './page-header';
 import { PropertyTable } from './property-table';
@@ -14,7 +14,9 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { X, Loader2, Home } from 'lucide-react';
 import { PropertyDetailsDialog } from './property-details-dialog';
+import { ShareDialog } from './share-dialog';
 import { useAuth } from '@/context/auth-context';
+import { createShareLink, getBaseUrl } from '@/app/actions';
 
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 type Tables = Record<string, { id: string; name: string; properties: Property[] }>;
@@ -55,6 +57,10 @@ export function PageClient() {
   const [isAddEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
+  const [isSharing, startSharingTransition] = useTransition();
+
   const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
@@ -112,13 +118,13 @@ export function PageClient() {
 
   const handlePropertyChange = useCallback((updatedProperties: Property[]) => {
       if (!activeTableId) return;
-      setTables(currentTables => {
-          const newTables = { ...currentTables };
-          if (newTables[activeTableId]) {
-              newTables[activeTableId] = { ...newTables[activeTableId], properties: updatedProperties };
-          }
-          return newTables;
-      });
+      setTables(currentTables => ({
+        ...currentTables,
+        [activeTableId]: {
+          ...currentTables[activeTableId],
+          properties: updatedProperties
+        }
+      }));
   }, [activeTableId]);
   
   const addOrUpdateTags = (data: Omit<Property, 'id'>): string[] => {
@@ -200,7 +206,7 @@ export function PageClient() {
     reader.readAsText(file);
   };
 
-  const handleTableCreate = () => {
+  const handleTableCreate = useCallback(() => {
     const name = window.prompt("Digite o nome da nova tabela:");
     if (name && name.trim()) {
       const newTableId = `table-${Date.now()}`;
@@ -209,9 +215,9 @@ export function PageClient() {
       setActiveTableId(newTableId);
       toast({ title: `Tabela "${name.trim()}" criada!` });
     }
-  };
+  }, []);
 
-  const handleTableRename = () => {
+  const handleTableRename = useCallback(() => {
     if (!activeTableId) return;
     const currentName = tables[activeTableId].name;
     const newName = window.prompt("Digite o novo nome para a tabela:", currentName);
@@ -223,9 +229,9 @@ export function PageClient() {
       });
       toast({ title: `Tabela renomeada para "${newName.trim()}"` });
     }
-  };
+  }, [activeTableId, tables]);
 
-  const handleTableDelete = () => {
+  const handleTableDelete = useCallback(() => {
     if (!activeTableId || Object.keys(tables).length <= 1) {
       toast({ variant: 'destructive', title: 'Ação não permitida', description: 'Você não pode excluir a única tabela existente.' });
       return;
@@ -241,8 +247,24 @@ export function PageClient() {
       setActiveTableId(newActiveTableId);
       toast({ title: `Tabela "${tableName}" excluída.` });
     }
-  };
+  }, [activeTableId, tables, toast]);
   
+  const handleShare = () => {
+    startSharingTransition(async () => {
+        const currentProperties = tables[activeTableId!]?.properties || [];
+        const currentName = tables[activeTableId!]?.name || 'Lista de Imóveis';
+        
+        const result = await createShareLink(currentProperties, currentName);
+        if (result.success && result.id) {
+            const baseUrl = await getBaseUrl();
+            setShareUrl(`${baseUrl}/share/${result.id}`);
+            setIsShareDialogOpen(true);
+        } else {
+            toast({ variant: 'destructive', title: 'Erro ao compartilhar', description: result.error || 'Não foi possível criar o link de compartilhamento.' });
+        }
+    });
+  };
+
   const filteredProperties = useMemo(() => {
     if (activeTags.length === 0) return properties;
     return properties.filter(p => activeTags.every(tag => p.tags.includes(tag)));
@@ -292,7 +314,7 @@ export function PageClient() {
     );
   }
   
-  if (!isClient) {
+  if (!isClient || !user) {
     return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
@@ -308,6 +330,7 @@ export function PageClient() {
             onExportCsv={() => exportToCsv(properties, tables[activeTableId!]?.name || 'meus_imoveis')}
             onExportWord={() => exportToWord(properties, tables[activeTableId!]?.name || 'meus_imoveis')}
             onExportJson={handleExportJson}
+            onShare={handleShare}
             hasProperties={properties.length > 0}
             tables={Object.values(tables)}
             activeTableId={activeTableId}
@@ -338,7 +361,12 @@ export function PageClient() {
       </div>
 
       <main className="flex-grow overflow-y-auto pt-6">
-        {Object.keys(tables).length > 0 && activeTableId ? (
+        {isSharing ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-16">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="text-muted-foreground">Criando link de compartilhamento...</p>
+            </div>
+        ) : Object.keys(tables).length > 0 && activeTableId ? (
             <PropertyTable 
             properties={sortedProperties}
             onEdit={(property) => { setEditingProperty(property); setAddEditDialogOpen(true); }}
@@ -383,6 +411,12 @@ export function PageClient() {
         isOpen={!!viewingProperty}
         onOpenChange={(open) => !open && setViewingProperty(null)}
         property={viewingProperty}
+      />
+
+      <ShareDialog
+        isOpen={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        url={shareUrl}
       />
     </div>
   );
