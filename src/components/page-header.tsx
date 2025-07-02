@@ -5,10 +5,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { PlusCircle, FileUp, Download, FileJson, Share2, User, LogOut, Loader2, Database, ChevronsUpDown, Edit, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
-import { type UserCredentials, type PropertyTable } from "@/types";
+import { type PropertyTable } from "@/types";
+import type { User as FirebaseUser } from 'firebase/auth';
 
 interface PageHeaderProps {
-  user: UserCredentials | null;
+  user: FirebaseUser | null;
   onLogout: () => void;
   onAdd: () => void;
   onImportDoc: () => void;
@@ -132,7 +133,7 @@ export function PageHeader({
                  </DropdownMenuLabel>
                  <DropdownMenuSeparator />
                 <DropdownMenuLabel>
-                  Logado como <span className="font-bold">{user.username}</span>
+                  Logado como <span className="font-bold">{user.email}</span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onLogout}>

@@ -16,9 +16,8 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
-  username: z.string().min(3, { message: "O nome de usuário deve ter pelo menos 3 caracteres." }),
+  email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
   password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
-  adminPassword: z.string().min(1, { message: "A senha de administrador é obrigatória." }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -32,20 +31,20 @@ export function SignupClient() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
-      adminPassword: "",
     },
   });
 
   const handleFormSubmit = async (data: FormValues) => {
     setIsPending(true);
     try {
-      await createUser(data);
-      toast({ title: "Usuário Criado!", description: `O usuário ${data.username} foi criado com sucesso.` });
+      await createUser({ email: data.email, password: data.password });
+      toast({ title: "Usuário Criado!", description: "Sua conta foi criada com sucesso. Por favor, faça o login." });
       router.push("/login");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Erro na Criação", description: error.message });
+    } finally {
       setIsPending(false);
     }
   };
@@ -57,7 +56,7 @@ export function SignupClient() {
           <div className="flex justify-center mb-4">
             <Image src="/logo.svg" alt="MV Broker Logo" width={64} height={64} />
           </div>
-          <CardTitle>Criar Novo Usuário</CardTitle>
+          <CardTitle>Criar Nova Conta</CardTitle>
           <CardDescription>Preencha os dados para criar uma nova conta.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -65,12 +64,12 @@ export function SignupClient() {
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Novo Nome de Usuário</FormLabel>
+                    <FormLabel>E-mail</FormLabel>
                     <FormControl>
-                      <Input placeholder="novo.usuario" {...field} />
+                      <Input placeholder="seu@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -81,20 +80,7 @@ export function SignupClient() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nova Senha</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="adminPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha de Administrador</FormLabel>
+                    <FormLabel>Senha</FormLabel>
                     <FormControl>
                       <Input type="password" placeholder="••••••••" {...field} />
                     </FormControl>
@@ -104,7 +90,7 @@ export function SignupClient() {
               />
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Criar Usuário
+                Criar Conta
               </Button>
             </form>
           </Form>

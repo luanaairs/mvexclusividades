@@ -86,7 +86,7 @@ export function PageClient() {
   const fetchTables = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
-    const result = await getTablesForUser(user.username);
+    const result = await getTablesForUser(user.uid);
     if (result.success && result.tables) {
       setTables(result.tables);
       if (result.tables.length > 0) {
@@ -109,7 +109,7 @@ export function PageClient() {
   const saveProperties = useCallback(async (tableId: string, updatedProperties: Property[]) => {
     if (!user) return;
     setIsSaving(true);
-    const result = await savePropertiesToTable({ tableId, properties: updatedProperties, username: user.username });
+    const result = await savePropertiesToTable({ tableId, properties: updatedProperties, userId: user.uid });
     if (!result.success) {
       toast({ variant: "destructive", title: "Erro ao Salvar", description: result.error });
     }
@@ -178,7 +178,7 @@ export function PageClient() {
 
     switch (dialogState.type) {
       case 'create':
-        result = await createTable({ name: dialogInputValue, username: user.username });
+        result = await createTable({ name: dialogInputValue, userId: user.uid });
         if(result.success && result.table) {
           toast({ title: "Sucesso!", description: `Tabela "${result.table.name}" criada.` });
           await fetchTables();
@@ -187,7 +187,7 @@ export function PageClient() {
         break;
       case 'rename':
         if(!dialogState.table) break;
-        result = await renameTable({ tableId: dialogState.table.id, newName: dialogInputValue, username: user.username });
+        result = await renameTable({ tableId: dialogState.table.id, newName: dialogInputValue, userId: user.uid });
          if(result.success) {
             toast({ title: "Sucesso!", description: `Tabela renomeada para "${dialogInputValue}".` });
             await fetchTables();
@@ -195,7 +195,7 @@ export function PageClient() {
         break;
       case 'delete':
         if(!dialogState.table) break;
-        result = await deleteTable({ tableId: dialogState.table.id, username: user.username });
+        result = await deleteTable({ tableId: dialogState.table.id, userId: user.uid });
         if(result.success) {
             toast({ title: "Sucesso!", description: `Tabela "${dialogState.table.name}" excluída.` });
             await fetchTables();

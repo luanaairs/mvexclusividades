@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
-  username: z.string().min(1, { message: "O nome de usuário é obrigatório." }),
+  email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
   password: z.string().min(1, { message: "A senha é obrigatória." }),
 });
 
@@ -31,7 +31,7 @@ export function LoginClient() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -39,13 +39,11 @@ export function LoginClient() {
   const handleFormSubmit = async (data: FormValues) => {
     setIsPending(true);
     try {
-        const success = await login(data.username, data.password);
-        if (success) {
-          toast({ title: "Login bem-sucedido!", description: `Bem-vindo de volta, ${data.username}.` });
-          router.push("/");
-        }
+        await login({ email: data.email, password: data.password });
+        toast({ title: "Login bem-sucedido!", description: `Bem-vindo(a) de volta.` });
+        router.push("/");
     } catch (error: any) {
-       toast({ variant: "destructive", title: "Erro no Login", description: error.message || "Nome de usuário ou senha inválidos." });
+       toast({ variant: "destructive", title: "Erro no Login", description: error.message || "Ocorreu um erro inesperado." });
     } finally {
         setIsPending(false);
     }
@@ -59,19 +57,19 @@ export function LoginClient() {
             <Image src="/logo.svg" alt="MV Broker Logo" width={64} height={64} />
           </div>
           <CardTitle>Acessar Plataforma</CardTitle>
-          <CardDescription>Use suas credenciais para entrar.</CardDescription>
+          <CardDescription>Use seu e-mail e senha para entrar.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nome de Usuário</FormLabel>
+                    <FormLabel>E-mail</FormLabel>
                     <FormControl>
-                      <Input placeholder="seu.usuario" {...field} />
+                      <Input placeholder="seu@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

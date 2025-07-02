@@ -2,69 +2,75 @@
 
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { createUserAction, loginAction } from '@/app/actions';
-import { type UserCredentials, type NewUser } from '@/types';
-
-const CURRENT_USER_STORAGE_KEY = 'exclusivity-app-current-user';
+import { type UserCredentials } from '@/types';
+import { auth } from '@/lib/firebase';
+import { 
+  onAuthStateChanged, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut,
+  type User
+} from 'firebase/auth';
 
 interface AuthContextType {
-  user: UserCredentials | null;
+  user: User | null;
   loading: boolean;
-  login: (username: string, password?: string) => Promise<boolean>;
+  login: (credentials: UserCredentials) => Promise<void>;
   logout: () => void;
-  createUser: (data: NewUser) => Promise<void>;
+  createUser: (credentials: UserCredentials) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<UserCredentials | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Check for a logged-in user session from previous visits
-    if (typeof window !== 'undefined') {
-      const loggedInUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
-      if (loggedInUser) {
-        try {
-            setUser(JSON.parse(loggedInUser));
-        } catch (e) {
-            console.error("Failed to parse user from localStorage", e);
-            localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
-        }
-      }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       setLoading(false);
-    }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  const login = async (username: string, password?: string): Promise<boolean> => {
-    const response = await loginAction({ username, password });
-
-    if (response.success && response.user) {
-      setUser(response.user);
-      localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(response.user));
-      return true;
+  const login = async (credentials: UserCredentials) => {
+    if (!credentials.email || !credentials.password) {
+        throw new Error("Email e senha são obrigatórios.");
     }
-    
-    // Make sure to throw the error from the server action if it exists
-    if (response.error) {
-        throw new Error(response.error);
+    try {
+      await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+    } catch (error: any) {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        throw new Error("E-mail ou senha inválidos.");
+      }
+      console.error("Firebase login error:", error);
+      throw new Error("Ocorreu um erro durante o login.");
     }
-
-    return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+  const logout = async () => {
+    await signOut(auth);
     router.push('/login');
   };
 
-  const createUser = async (data: NewUser) => {
-    const response = await createUserAction(data);
-    if (!response.success) {
-      throw new Error(response.error || 'Falha ao criar usuário.');
+  const createUser = async (credentials: UserCredentials) => {
+    if (!credentials.email || !credentials.password) {
+        throw new Error("Email e senha são obrigatórios.");
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, credentials.email, credentials.password);
+    } catch (error: any) {
+      if (error.code === 'auth/email-already-in-use') {
+        throw new Error("Este endereço de e-mail já está em uso.");
+      }
+       if (error.code === 'auth/weak-password') {
+        throw new Error("A senha é muito fraca. Use pelo menos 6 caracteres.");
+      }
+      console.error("Firebase signup error:", error);
+      throw new Error('Falha ao criar usuário.');
     }
   };
   
