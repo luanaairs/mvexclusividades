@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { type Property, type PropertyStatus, type PropertyType } from '@/types';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { type Property, type PropertyStatus, type PropertyType, type PropertyCategory, type PropertyTable } from '@/types';
+import { getTablesForUser, createTable, savePropertiesToTable, renameTable, deleteTable, createShareLink } from '@/app/actions';
 import { PageHeader } from './page-header';
 import { PropertyTable } from './property-table';
 import { PropertyFormDialog } from './property-form-dialog';
@@ -12,7 +13,7 @@ import { exportToCsv, exportToWord, exportToJson } from '@/lib/export';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { X } from 'lucide-react';
+import { X, Loader2, FileText, Database } from 'lucide-react';
 import { PropertyDetailsDialog } from './property-details-dialog';
 import {
   AlertDialog,
@@ -25,10 +26,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from '@/context/auth-context';
+import { Input } from './ui/input';
 
-const LOCAL_STORAGE_KEY = 'exclusivity-list';
-const SHARED_LISTS_KEY = 'shared-property-lists';
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
+type DialogState = { type: 'create' | 'rename' | 'delete' | 'share'; table?: PropertyTable; } | null;
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
     DISPONIVEL: 'Disponível',
@@ -56,8 +57,17 @@ const CATEGORY_LABELS: Record<PropertyCategory, string> = {
 
 
 export function PageClient() {
-  const [properties, setProperties] = useState<Property[]>([]);
   const { user, logout } = useAuth();
+  const { toast } = useToast();
+  
+  const [tables, setTables] = useState<PropertyTable[]>([]);
+  const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isActionPending, setIsActionPending] = useState(false);
+
+  const [dialogState, setDialogState] = useState<DialogState>(null);
+  const [dialogInputValue, setDialogInputValue] = useState('');
   
   const [isAddEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -65,56 +75,67 @@ export function PageClient() {
   const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
-  const [isClearConfirmOpen, setClearConfirmOpen] = useState(false);
-  const [isShareDialogOpen, setShareDialogOpen] = useState(false);
   const [generatedShareUrl, setGeneratedShareUrl] = useState('');
 
   const jsonImportRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
+  
+  const activeTable = useMemo(() => tables.find(t => t.id === activeTableId), [tables, activeTableId]);
+  const properties = useMemo(() => activeTable?.properties || [], [activeTable]);
 
-  useEffect(() => {
-    try {
-      const storedProperties = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedProperties && storedProperties !== '[]' && JSON.parse(storedProperties).length > 0) {
-        setProperties(JSON.parse(storedProperties));
+
+  const fetchTables = useCallback(async () => {
+    if (!user) return;
+    setIsLoading(true);
+    const result = await getTablesForUser(user.username);
+    if (result.success && result.tables) {
+      setTables(result.tables);
+      if (result.tables.length > 0) {
+        if (!activeTableId || !result.tables.some(t => t.id === activeTableId)) {
+          setActiveTableId(result.tables[0].id);
+        }
       } else {
-        setProperties([]);
+        setActiveTableId(null);
       }
-    } catch (error) {
-      console.error("Failed to load properties from local storage", error);
-      toast({ variant: "destructive", title: "Erro", description: "Não foi possível carregar os dados salvos." });
-      setProperties([]);
+    } else {
+      toast({ variant: "destructive", title: "Erro", description: result.error });
     }
-  }, []); 
+    setIsLoading(false);
+  }, [user, activeTableId, toast]);
 
   useEffect(() => {
-    if (user) { // Only save if user is logged in
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(properties));
-      } catch (error) {
-        console.error("Failed to save properties to local storage", error);
-        toast({ variant: "destructive", title: "Erro", description: "Não foi possível salvar as alterações." });
-      }
-    }
-  }, [properties, user, toast]);
+    fetchTables();
+  }, [user, fetchTables]);
 
+  const saveProperties = useCallback(async (tableId: string, updatedProperties: Property[]) => {
+    if (!user) return;
+    setIsSaving(true);
+    const result = await savePropertiesToTable({ tableId, properties: updatedProperties, username: user.username });
+    if (!result.success) {
+      toast({ variant: "destructive", title: "Erro ao Salvar", description: result.error });
+    }
+    setIsSaving(false);
+  }, [user, toast]);
+  
   const addOrUpdateTags = (data: Omit<Property, 'id'>): string[] => {
     let baseTags = data.tags || [];
     const fieldsToTag = [data.neighborhood, data.agencyName, data.propertyType, data.status];
-    
     fieldsToTag.forEach(field => {
         if (field && !baseTags.includes(field)) {
             baseTags.push(field);
         }
     });
-
     if (data.categories) {
       baseTags = [...baseTags, ...data.categories];
     }
-    
-    // Return a unique set of tags
     return [...new Set(baseTags)];
   };
+
+  const handlePropertyChange = (newProperties: Property[]) => {
+    if (!activeTable) return;
+    const updatedTable = { ...activeTable, properties: newProperties };
+    setTables(tables.map(t => t.id === activeTableId ? updatedTable : t));
+    saveProperties(activeTable.id, newProperties);
+  }
 
   const addProperty = (data: Omit<Property, 'id'>) => {
     const newProperty: Property = {
@@ -122,7 +143,7 @@ export function PageClient() {
       ...data,
       tags: addOrUpdateTags(data),
     };
-    setProperties(prev => [newProperty, ...prev]);
+    handlePropertyChange([newProperty, ...properties]);
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" adicionado.` });
   };
   
@@ -132,111 +153,104 @@ export function PageClient() {
       ...data,
       tags: addOrUpdateTags(data),
     }));
-  
-    setProperties(prev => [...newProperties, ...prev]);
+    handlePropertyChange([...newProperties, ...properties]);
     toast({ title: "Sucesso!", description: `${newProperties.length} imóvel${newProperties.length > 1 ? 'is' : ''} importado${newProperties.length > 1 ? 's' : ''}.` });
   };
 
   const updateProperty = (data: Omit<Property, 'id'>, id: string) => {
     const updatedProperty = { ...data, id, tags: addOrUpdateTags(data) };
-    setProperties(prev => prev.map(p => p.id === id ? updatedProperty : p));
+    handlePropertyChange(properties.map(p => p.id === id ? updatedProperty : p));
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" atualizado.` });
     setEditingProperty(null);
   };
   
   const deleteProperty = (id: string) => {
     const propertyName = properties.find(p => p.id === id)?.propertyName;
-    setProperties(prev => prev.filter(p => p.id !== id));
+    handlePropertyChange(properties.filter(p => p.id !== id));
     toast({ title: "Sucesso!", description: `Imóvel "${propertyName}" excluído.` });
   };
-  
-  const handleEditClick = (property: Property) => {
-    setEditingProperty(property);
-    setAddEditDialogOpen(true);
-  };
 
-  const handleViewDetailsClick = (property: Property) => {
-    setViewingProperty(property);
-  };
-  
-  const handleAddClick = () => {
-    setEditingProperty(null);
-    setAddEditDialogOpen(true);
+  const handleDialogAction = async () => {
+    if (!dialogState || !user) return;
+    setIsActionPending(true);
+
+    let result: { success: boolean, error?: string, table?: PropertyTable, shareId?: string };
+
+    switch (dialogState.type) {
+      case 'create':
+        result = await createTable({ name: dialogInputValue, username: user.username });
+        if(result.success && result.table) {
+          toast({ title: "Sucesso!", description: `Tabela "${result.table.name}" criada.` });
+          await fetchTables();
+          setActiveTableId(result.table.id);
+        }
+        break;
+      case 'rename':
+        if(!dialogState.table) break;
+        result = await renameTable({ tableId: dialogState.table.id, newName: dialogInputValue, username: user.username });
+         if(result.success) {
+            toast({ title: "Sucesso!", description: `Tabela renomeada para "${dialogInputValue}".` });
+            await fetchTables();
+         }
+        break;
+      case 'delete':
+        if(!dialogState.table) break;
+        result = await deleteTable({ tableId: dialogState.table.id, username: user.username });
+        if(result.success) {
+            toast({ title: "Sucesso!", description: `Tabela "${dialogState.table.name}" excluída.` });
+            await fetchTables();
+         }
+        break;
+      case 'share':
+        result = await createShareLink(properties);
+        if(result.success && result.shareId) {
+            setGeneratedShareUrl(`${window.location.origin}/share/${result.shareId}`);
+        } else {
+            toast({ variant: "destructive", title: "Erro", description: "Não foi possível criar o link de compartilhamento." });
+        }
+        break;
+    }
+
+    if (result && !result.success && dialogState.type !== 'share') {
+        toast({ variant: "destructive", title: "Erro na Operação", description: result.error });
+    }
+
+    setIsActionPending(false);
+    setDialogState(null);
+    setDialogInputValue('');
   };
   
   const handleExportJson = () => {
-    exportToJson(properties);
+    if (!activeTable) return;
+    exportToJson(activeTable.properties, activeTable.name);
     toast({ title: "Sucesso!", description: "Backup JSON exportado." });
-  };
-
-  const handleImportJsonClick = () => {
-    jsonImportRef.current?.click();
   };
 
   const handleJsonFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !activeTable) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
         const text = e.target?.result;
-        if (typeof text !== 'string') {
-          throw new Error("File could not be read.");
-        }
+        if (typeof text !== 'string') throw new Error("File could not be read.");
         const data = JSON.parse(text);
-
-        if (Array.isArray(data) && (data.length === 0 || (data[0].id && data[0].propertyName))) {
-          setProperties(data);
-          toast({ title: "Sucesso!", description: `${data.length} imóvel${data.length > 1 ? 's' : ''} importado${data.length > 1 ? 's' : ''} do backup.` });
+        if (Array.isArray(data)) {
+            handlePropertyChange(data);
+            toast({ title: "Sucesso!", description: `${data.length} imóvel${data.length > 1 ? 's' : ''} importado${data.length > 1 ? 's' : ''} para a tabela "${activeTable.name}".` });
         } else {
-          throw new Error("Invalid JSON format for properties.");
+            throw new Error("Invalid JSON format for properties.");
         }
       } catch (error) {
-        console.error("Failed to import JSON:", error);
         toast({ variant: "destructive", title: "Erro na Importação", description: "O arquivo de backup parece ser inválido ou está corrompido." });
       } finally {
-        if (event.target) {
-            event.target.value = '';
-        }
+        if (event.target) event.target.value = '';
       }
-    };
-    reader.onerror = () => {
-      toast({ variant: "destructive", title: "Erro", description: "Falha ao ler o arquivo." });
     };
     reader.readAsText(file);
   };
-
-  const handleShare = () => {
-    try {
-      const shareId = Date.now().toString(36) + Math.random().toString(36).slice(2);
-      const storedShares = localStorage.getItem(SHARED_LISTS_KEY);
-      const shares = storedShares ? JSON.parse(storedShares) : {};
-      shares[shareId] = properties;
-      localStorage.setItem(SHARED_LISTS_KEY, JSON.stringify(shares));
-      
-      const url = `${window.location.origin}/share/${shareId}`;
-      setGeneratedShareUrl(url);
-      setShareDialogOpen(true);
-    } catch (error) {
-      console.error("Failed to create share link", error);
-      toast({ variant: "destructive", title: "Erro", description: "Não foi possível criar o link de compartilhamento." });
-    }
-  };
-
-  const allNeighborhoods = useMemo(() => [...new Set(properties.map(p => p.neighborhood).filter((n): n is string => !!n))].sort(), [properties]);
-  const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort() as PropertyCategory[], [properties]);
-  const allPropertyTypes = useMemo(() => [...new Set(properties.map(p => p.propertyType))].sort(), [properties]);
-  const allStatuses = useMemo(() => [...new Set(properties.map(p => p.status))].sort(), [properties]);
-  const allAgencies = useMemo(() => [...new Set(properties.map(p => p.agencyName).filter((a): a is string => !!a))].sort(), [properties]);
-
   
-  const toggleTagFilter = (tag: string) => {
-    setActiveTags(prev => 
-      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
-    );
-  };
-
   const filteredProperties = useMemo(() => {
     if (activeTags.length === 0) return properties;
     return properties.filter(p => activeTags.every(tag => p.tags.includes(tag)));
@@ -256,17 +270,19 @@ export function PageClient() {
       sortableItems.sort((a, b) => {
         const aValue = a[sortConfig.key] ?? 0;
         const bValue = b[sortConfig.key] ?? 0;
-        if (aValue < bValue) {
-          return sortConfig.direction === 'ascending' ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === 'ascending' ? 1 : -1;
-        }
+        if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
         return 0;
       });
     }
     return sortableItems;
   }, [filteredProperties, sortConfig]);
+
+  const allNeighborhoods = useMemo(() => [...new Set(properties.map(p => p.neighborhood).filter((n): n is string => !!n))].sort(), [properties]);
+  const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort() as PropertyCategory[], [properties]);
+  const allPropertyTypes = useMemo(() => [...new Set(properties.map(p => p.propertyType))].sort(), [properties]);
+  const allStatuses = useMemo(() => [...new Set(properties.map(p => p.status))].sort(), [properties]);
+  const allAgencies = useMemo(() => [...new Set(properties.map(p => p.agencyName).filter((a): a is string => !!a))].sort(), [properties]);
 
   const FilterSection = ({ title, tags, displayMap, onToggle }: { title: string, tags: string[], displayMap?: Record<string, string>, onToggle: (tag: string) => void}) => {
     if (tags.length === 0) return null;
@@ -275,12 +291,7 @@ export function PageClient() {
         <h4 className="font-medium text-sm text-muted-foreground mb-2">{title}</h4>
         <div className="flex flex-wrap gap-2 items-center">
           {tags.map(tag => (
-            <Badge
-              key={tag}
-              variant={activeTags.includes(tag) ? "default" : "secondary"}
-              onClick={() => onToggle(tag)}
-              className="cursor-pointer transition-all hover:shadow-md"
-            >
+            <Badge key={tag} variant={activeTags.includes(tag) ? "default" : "secondary"} onClick={() => onToggle(tag)} className="cursor-pointer">
               {displayMap ? displayMap[tag] : tag}
             </Badge>
           ))}
@@ -288,95 +299,128 @@ export function PageClient() {
       </div>
     );
   }
+  
+  if (isLoading) {
+    return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 font-body flex flex-col h-screen">
       <div className="flex-shrink-0">
-        <div className="flex flex-col gap-6">
-            <PageHeader 
+        <PageHeader 
             user={user}
             onLogout={logout}
-            onAdd={handleAddClick}
+            onAdd={() => setAddEditDialogOpen(true)}
             onImportDoc={() => setImportDialogOpen(true)}
-            onImportJson={handleImportJsonClick}
-            onExportCsv={() => exportToCsv(properties)}
-            onExportWord={() => exportToWord(properties)}
+            onImportJson={() => jsonImportRef.current?.click()}
+            onExportCsv={() => exportToCsv(properties, activeTable?.name)}
+            onExportWord={() => exportToWord(properties, activeTable?.name)}
             onExportJson={handleExportJson}
-            onClearAll={() => setClearConfirmOpen(true)}
-            onShare={handleShare}
+            onShare={() => setDialogState({ type: 'share' })}
             hasProperties={properties.length > 0}
-            />
-
-            {properties.length > 0 && (
-            <Card>
-                <CardHeader className='pb-4'>
-                <CardTitle>Filtros</CardTitle>
-                </CardHeader>
-                <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <FilterSection title="Status" tags={allStatuses} displayMap={STATUS_LABELS} onToggle={toggleTagFilter} />
-                    <FilterSection title="Bairro" tags={allNeighborhoods} onToggle={toggleTagFilter} />
-                    <FilterSection title="Imobiliária" tags={allAgencies} onToggle={toggleTagFilter} />
-                    <FilterSection title="Tipo de Imóvel" tags={allPropertyTypes} displayMap={PROPERTY_TYPE_LABELS} onToggle={toggleTagFilter} />
-                    <FilterSection title="Categorias" tags={allCategories} displayMap={CATEGORY_LABELS} onToggle={toggleTagFilter} />
-                    </div>
-                    {activeTags.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                        <Button variant="ghost" size="sm" onClick={() => setActiveTags([])}>
-                        <X className="h-4 w-4 mr-1"/>
-                        Limpar Filtros
-                        </Button>
-                    </div>
-                    )}
-                </CardContent>
-            </Card>
-            )}
-        </div>
+            tables={tables}
+            activeTable={activeTable}
+            isSaving={isSaving}
+            onTableSelect={setActiveTableId}
+            onNewTable={() => setDialogState({ type: 'create'})}
+            onRenameTable={() => {
+                if (!activeTable) return;
+                setDialogInputValue(activeTable.name);
+                setDialogState({ type: 'rename', table: activeTable });
+            }}
+            onDeleteTable={() => {
+                if (!activeTable) return;
+                setDialogState({ type: 'delete', table: activeTable });
+            }}
+        />
+        {activeTable && properties.length > 0 && (
+          <Card className="mt-6">
+              <CardHeader className='pb-4'><CardTitle>Filtros</CardTitle></CardHeader>
+              <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                  <FilterSection title="Status" tags={allStatuses} displayMap={STATUS_LABELS} onToggle={tag => setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} />
+                  <FilterSection title="Bairro" tags={allNeighborhoods} onToggle={tag => setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} />
+                  <FilterSection title="Imobiliária" tags={allAgencies} onToggle={tag => setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} />
+                  <FilterSection title="Tipo de Imóvel" tags={allPropertyTypes} displayMap={PROPERTY_TYPE_LABELS} onToggle={tag => setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} />
+                  <FilterSection title="Categorias" tags={allCategories} displayMap={CATEGORY_LABELS} onToggle={tag => setActiveTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag])} />
+                  </div>
+                  {activeTags.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                      <Button variant="ghost" size="sm" onClick={() => setActiveTags([])}><X className="h-4 w-4 mr-1"/>Limpar Filtros</Button>
+                  </div>
+                  )}
+              </CardContent>
+          </Card>
+        )}
       </div>
 
       <main className="flex-grow overflow-y-auto pt-6">
+        {activeTable ? (
           <PropertyTable 
             properties={sortedProperties}
-            onEdit={handleEditClick}
+            onEdit={(property) => { setEditingProperty(property); setAddEditDialogOpen(true); }}
             onDelete={deleteProperty}
-            onViewDetails={handleViewDetailsClick}
+            onViewDetails={setViewingProperty}
             requestSort={requestSort}
             sortConfig={sortConfig}
           />
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <Database className="h-16 w-16 text-muted-foreground" />
+            <h2 className="mt-4 text-2xl font-bold">Nenhuma tabela encontrada</h2>
+            <p className="mt-2 text-muted-foreground">Crie sua primeira tabela para começar a adicionar imóveis.</p>
+            <Button className="mt-6" onClick={() => setDialogState({ type: 'create'})}>Criar Nova Tabela</Button>
+          </div>
+        )}
       </main>
       
-      <input
-        type="file"
-        ref={jsonImportRef}
-        accept=".json"
-        className="hidden"
-        onChange={handleJsonFileChange}
-      />
+      <input type="file" ref={jsonImportRef} accept=".json" className="hidden" onChange={handleJsonFileChange} />
 
-      <AlertDialog open={isClearConfirmOpen} onOpenChange={setClearConfirmOpen}>
+      <AlertDialog open={!!dialogState} onOpenChange={(open) => !open && setDialogState(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Limpar toda a tabela?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {dialogState?.type === 'create' && 'Criar Nova Tabela'}
+              {dialogState?.type === 'rename' && 'Renomear Tabela'}
+              {dialogState?.type === 'delete' && 'Excluir Tabela'}
+              {dialogState?.type === 'share' && 'Link de Compartilhamento Gerado'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita e irá remover todos os {properties.length} imóveis da lista. Recomendamos fazer um backup antes de continuar.
+              {dialogState?.type === 'create' && 'Digite o nome para sua nova tabela de imóveis.'}
+              {dialogState?.type === 'rename' && `Digite o novo nome para a tabela "${dialogState.table?.name}".`}
+              {dialogState?.type === 'delete' && `Tem certeza que deseja excluir a tabela "${dialogState.table?.name}"? Esta ação não pode ser desfeita.`}
+              {dialogState?.type === 'share' && 'Copie e envie este link para seus clientes. Ele dá acesso de somente leitura à lista atual.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          {(dialogState?.type === 'create' || dialogState?.type === 'rename') && (
+            <Input 
+              autoFocus
+              value={dialogInputValue}
+              onChange={(e) => setDialogInputValue(e.target.value)}
+              placeholder="Ex: Exclusividades Maio 2024"
+              onKeyDown={(e) => e.key === 'Enter' && handleDialogAction()}
+            />
+          )}
+
+          {dialogState?.type === 'share' && (
+             <div className="flex items-center space-x-2 mt-4">
+                <Input id="share-link" value={generatedShareUrl} readOnly />
+             </div>
+          )}
+
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <Button variant="outline" onClick={() => {
-                handleExportJson();
-                toast({ title: "Backup Criado", description: "Seu backup foi salvo. Você pode limpar a tabela agora." });
-            }}>
-              Fazer Backup (JSON)
-            </Button>
+            <AlertDialogCancel onClick={() => setDialogInputValue('')}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                  setProperties([]);
-                  toast({ title: "Tabela Limpa", description: "Todos os imóveis foram removidos." });
-              }}
+              onClick={handleDialogAction}
+              disabled={isActionPending || ((dialogState?.type === 'create' || dialogState?.type === 'rename') && !dialogInputValue)}
+              className={dialogState?.type === 'delete' ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
             >
-              Sim, limpar tudo
+              {isActionPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {dialogState?.type === 'create' && 'Criar'}
+              {dialogState?.type === 'rename' && 'Renomear'}
+              {dialogState?.type === 'delete' && 'Excluir'}
+              {dialogState?.type === 'share' && 'Fechar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -402,16 +446,14 @@ export function PageClient() {
       />
 
       <ShareDialog 
-        isOpen={isShareDialogOpen}
-        onOpenChange={setShareDialogOpen}
+        isOpen={generatedShareUrl !== '' && dialogState?.type !== 'share'}
+        onOpenChange={(open) => !open && setGeneratedShareUrl('')}
         url={generatedShareUrl}
       />
 
       <PropertyDetailsDialog
         isOpen={!!viewingProperty}
-        onOpenChange={(open) => {
-          if (!open) setViewingProperty(null);
-        }}
+        onOpenChange={(open) => !open && setViewingProperty(null)}
         property={viewingProperty}
       />
     </div>

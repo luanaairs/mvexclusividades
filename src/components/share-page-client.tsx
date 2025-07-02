@@ -1,17 +1,16 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { type Property, type PropertyStatus, type PropertyType } from '@/types';
 import { PropertyTable } from './property-table';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { X, Share2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import Image from "next/image";
 import { PropertyDetailsDialog } from './property-details-dialog';
 import { ThemeToggle } from './theme-toggle';
 
-const SHARED_LISTS_KEY = 'shared-property-lists';
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
@@ -30,40 +29,15 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 }
 
 interface SharePageClientProps {
-  shareId: string;
+  initialProperties: Property[];
 }
 
-export function SharePageClient({ shareId }: SharePageClientProps) {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [isClient, setIsClient] = useState(false);
+export function SharePageClient({ initialProperties }: SharePageClientProps) {
+  const [properties, setProperties] = useState<Property[]>(initialProperties);
   const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: SortableKeys; direction: 'ascending' | 'descending' } | null>(null);
 
-  useEffect(() => {
-    setIsClient(true);
-    try {
-      const storedShares = localStorage.getItem(SHARED_LISTS_KEY);
-      if (storedShares) {
-        const shares = JSON.parse(storedShares);
-        const sharedProperties = shares[shareId];
-        if (sharedProperties) {
-          setProperties(sharedProperties);
-        } else {
-          // Handle case where shareId is not found
-          console.error("Share ID not found");
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load shared properties from local storage", error);
-    }
-  }, [shareId]);
-
-
-  const handleViewDetailsClick = (property: Property) => {
-    setViewingProperty(property);
-  };
-  
   const allNeighborhoods = useMemo(() => [...new Set(properties.map(p => p.neighborhood).filter((n): n is string => !!n))].sort(), [properties]);
   const allCategories = useMemo(() => [...new Set(properties.flatMap(p => p.categories || []))].sort(), [properties]);
   const allPropertyTypes = useMemo(() => [...new Set(properties.map(p => p.propertyType))].sort(), [properties]);
@@ -128,24 +102,6 @@ export function SharePageClient({ shareId }: SharePageClientProps) {
     );
   }
 
-  if (!isClient) {
-    return (
-        <div className="flex justify-center items-center h-screen">
-             <Share2 className="h-16 w-16 animate-pulse text-primary" />
-        </div>
-    );
-  }
-
-  if (properties.length === 0) {
-      return (
-        <div className="flex flex-col justify-center items-center h-screen text-center p-4">
-            <Share2 className="h-16 w-16 text-destructive mb-4" />
-            <h2 className="text-2xl font-bold">Link de Compartilhamento Inválido</h2>
-            <p className="text-muted-foreground mt-2">O link que você acessou não foi encontrado ou expirou.</p>
-        </div>
-      )
-  }
-
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 font-body">
       <div className="flex flex-col gap-6">
@@ -185,7 +141,7 @@ export function SharePageClient({ shareId }: SharePageClientProps) {
         <main>
           <PropertyTable 
             properties={sortedProperties}
-            onViewDetails={handleViewDetailsClick}
+            onViewDetails={setViewingProperty}
             requestSort={requestSort}
             sortConfig={sortConfig}
             showActions={false}

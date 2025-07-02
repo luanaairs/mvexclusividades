@@ -8,7 +8,7 @@ function escapeCsvCell(cellData: string | number | undefined): string {
   return cellString;
 }
 
-export function exportToCsv(properties: Property[]) {
+export function exportToCsv(properties: Property[], tableName: string = 'tabela') {
   const headers = [
     "Corretor", "Imobiliária", "Empreendimento", "Número", "Tipo", "Categorias", "Status",
     "Quartos", "Banheiros", "Suítes", "Lavabos",
@@ -51,19 +51,19 @@ export function exportToCsv(properties: Property[]) {
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
   link.setAttribute("href", url);
-  link.setAttribute("download", "tabela_exclusividades.csv");
+  link.setAttribute("download", `${tableName.replace(/ /g, '_')}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
-export function exportToWord(properties: Property[]) {
+export function exportToWord(properties: Property[], tableName: string = 'tabela') {
   const tableHtml = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><meta charset='utf-8'><title>Tabela de Exclusividades</title></head>
+    <head><meta charset='utf-8'><title>${tableName}</title></head>
     <body>
-      <h1>Tabela de Exclusividades</h1>
+      <h1>${tableName}</h1>
       <table border="1" style="border-collapse: collapse; width: 100%;">
         <thead>
           <tr style="background-color: #f2f2f2;">
@@ -131,20 +131,20 @@ export function exportToWord(properties: Property[]) {
   const link = document.createElement("a");
   const url = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(tableHtml);
   link.href = url;
-  link.download = `tabela_exclusividades.doc`;
+  link.download = `${tableName.replace(/ /g, '_')}.doc`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
 
-export function exportToJson(properties: Property[]) {
+export function exportToJson(properties: Property[], tableName: string = 'backup') {
   const jsonString = JSON.stringify(properties, null, 2);
   const blob = new Blob([jsonString], { type: 'application/json' });
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
   link.setAttribute("href", url);
-  link.setAttribute("download", "exclusividades_backup.json");
+  link.setAttribute("download", `${tableName.replace(/ /g, '_')}_backup.json`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
