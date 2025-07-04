@@ -184,9 +184,14 @@ export function PageClient() {
         toast({ variant: 'destructive', title: 'Ação cancelada', description: 'O nome da lista é obrigatório para compartilhar.' });
         return;
     }
+    
+    if (!user) {
+        toast({ variant: 'destructive', title: 'Erro de Autenticação', description: 'Você precisa estar logado para compartilhar.' });
+        return;
+    }
 
     startSharingTransition(async () => {
-        const result = await createShareLink(properties, listName.trim());
+        const result = await createShareLink(properties, listName.trim(), user.uid);
         if (result.success && result.id) {
             const baseUrl = await getBaseUrl();
             setShareUrl(`${baseUrl}/share/${result.id}`);

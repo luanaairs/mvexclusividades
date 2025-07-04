@@ -28,13 +28,12 @@ export async function performOcr(input: OcrInput): Promise<{ success: boolean; d
   }
 }
 
-export async function createShareLink(properties: Property[], listName: string): Promise<{ success: boolean; id?: string; error?: string; }> {
+export async function createShareLink(properties: Property[], listName: string, userId: string): Promise<{ success: boolean; id?: string; error?: string; }> {
   if (firebaseError || !auth || !db) {
     return { success: false, error: "O serviço de banco de dados não está configurado corretamente." };
   }
 
-  const user = auth.currentUser;
-  if (!user) {
+  if (!userId) {
     return { success: false, error: "Você precisa estar autenticado para compartilhar." };
   }
 
@@ -42,7 +41,7 @@ export async function createShareLink(properties: Property[], listName: string):
     const cleanedProperties = properties.map(p => cleanObject(p));
 
     const docRef = await addDoc(collection(db, "shared_lists"), {
-      userId: user.uid,
+      userId: userId,
       name: listName,
       properties: cleanedProperties,
       createdAt: serverTimestamp(),
