@@ -12,14 +12,13 @@ import { exportToCsv, exportToWord, exportToJson } from '@/lib/export';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { X, Loader2, Home } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { PropertyDetailsDialog } from './property-details-dialog';
 import { ShareDialog } from './share-dialog';
 import { useAuth } from '@/context/auth-context';
 import { createShareLink, getBaseUrl } from '@/app/actions';
 
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
-type Tables = Record<string, { id: string; name: string; properties: Property[] }>;
 
 const STATUS_LABELS: Record<PropertyStatus, string> = {
     DISPONIVEL: 'Disponível',
@@ -50,8 +49,7 @@ export function PageClient() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
   
-  const [tables, setTables] = useState<Tables>({});
-  const [activeTableId, setActiveTableId] = useState<string | null>(null);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [isClient, setIsClient] = useState(false);
 
   const [isAddEditDialogOpen, setAddEditDialogOpen] = useState(false);
@@ -71,62 +69,36 @@ export function PageClient() {
     setIsClient(true);
   }, []);
 
+  // Load properties from localStorage on mount
   useEffect(() => {
     if (!user || !isClient) return;
 
-    const key = `mvbroker_tables_${user.uid}`;
+    const key = `mvbroker_properties_${user.uid}`;
     try {
       const savedData = localStorage.getItem(key);
       if (savedData) {
-        const data = JSON.parse(savedData);
-        if (data.tables && data.activeTableId && Object.keys(data.tables).length > 0) {
-            setTables(data.tables);
-            setActiveTableId(data.activeTableId);
+        const parsedProperties = JSON.parse(savedData);
+        if(Array.isArray(parsedProperties)) {
+            setProperties(parsedProperties);
         } else {
-            throw new Error("Invalid data structure");
+            throw new Error("Invalid data structure in localStorage");
         }
-      } else {
-        // Create a default table for new users or if no data exists
-        const newTableId = `table-${Date.now()}`;
-        const newTable = { id: newTableId, name: 'Minha Lista de Imóveis', properties: [] };
-        setTables({ [newTableId]: newTable });
-        setActiveTableId(newTableId);
       }
     } catch (error) {
       console.error("Failed to load or parse localStorage data:", error);
-      // Handle corrupted data by resetting
-      const newTableId = `table-${Date.now()}`;
-      const newTable = { id: newTableId, name: 'Minha Lista de Imóveis', properties: [] };
-      setTables({ [newTableId]: newTable });
-      setActiveTableId(newTableId);
+      setProperties([]);
       toast({ variant: 'destructive', title: "Erro nos Dados Locais", description: "Os dados salvos localmente foram redefinidos por estarem corrompidos."});
     }
   }, [user, isClient, toast]);
 
+  // Save properties to localStorage whenever they change
   useEffect(() => {
-    if (user && isClient && Object.keys(tables).length > 0 && activeTableId) {
-      const key = `mvbroker_tables_${user.uid}`;
-      const dataToSave = { tables, activeTableId };
-      localStorage.setItem(key, JSON.stringify(dataToSave));
+    if (user && isClient) {
+      const key = `mvbroker_properties_${user.uid}`;
+      localStorage.setItem(key, JSON.stringify(properties));
     }
-  }, [tables, activeTableId, user, isClient]);
+  }, [properties, user, isClient]);
 
-  const properties = useMemo(() => {
-    if (!activeTableId || !tables[activeTableId]) return [];
-    return tables[activeTableId].properties;
-  }, [activeTableId, tables]);
-
-  const handlePropertyChange = useCallback((updatedProperties: Property[]) => {
-      if (!activeTableId) return;
-      setTables(currentTables => ({
-        ...currentTables,
-        [activeTableId]: {
-          ...currentTables[activeTableId],
-          properties: updatedProperties
-        }
-      }));
-  }, [activeTableId]);
-  
   const addOrUpdateTags = (data: Omit<Property, 'id'>): string[] => {
     let baseTags = data.tags || [];
     const fieldsToTag = [data.neighborhood, data.agencyName, data.propertyType, data.status];
@@ -147,7 +119,7 @@ export function PageClient() {
       ...data,
       tags: addOrUpdateTags(data),
     };
-    handlePropertyChange([newProperty, ...properties]);
+    setProperties(currentProperties => [newProperty, ...currentProperties]);
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" adicionado.` });
   };
   
@@ -157,25 +129,25 @@ export function PageClient() {
       ...data,
       tags: addOrUpdateTags(data),
     }));
-    handlePropertyChange([...newProperties, ...properties]);
+    setProperties(currentProperties => [...newProperties, ...currentProperties]);
     toast({ title: "Sucesso!", description: `${newProperties.length} imóvel${newProperties.length > 1 ? 'is' : ''} importado${newProperties.length > 1 ? 's' : ''}.` });
   };
 
   const updateProperty = (data: Omit<Property, 'id'>, id: string) => {
     const updatedProperty = { ...data, id, tags: addOrUpdateTags(data) };
-    handlePropertyChange(properties.map(p => p.id === id ? updatedProperty : p));
+    setProperties(currentProperties => currentProperties.map(p => p.id === id ? updatedProperty : p));
     toast({ title: "Sucesso!", description: `Imóvel "${data.propertyName}" atualizado.` });
     setEditingProperty(null);
   };
   
   const deleteProperty = (id: string) => {
     const propertyName = properties.find(p => p.id === id)?.propertyName;
-    handlePropertyChange(properties.filter(p => p.id !== id));
+    setProperties(currentProperties => currentProperties.filter(p => p.id !== id));
     toast({ title: "Sucesso!", description: `Imóvel "${propertyName}" excluído.` });
   };
   
   const handleExportJson = () => {
-    exportToJson(properties, tables[activeTableId!]?.name || 'meus_imoveis');
+    exportToJson(properties, 'meus_imoveis');
     toast({ title: "Sucesso!", description: "Backup JSON exportado." });
   };
 
@@ -192,7 +164,7 @@ export function PageClient() {
         if (Array.isArray(data)) {
             const combinedProperties = [...data, ...properties];
             const uniqueProperties = Array.from(new Map(combinedProperties.map(p => [p.id, p])).values());
-            handlePropertyChange(uniqueProperties);
+            setProperties(uniqueProperties);
             toast({ title: "Sucesso!", description: `Imóveis importados do backup para a tabela atual.` });
         } else {
             throw new Error("Invalid JSON format for properties.");
@@ -205,56 +177,16 @@ export function PageClient() {
     };
     reader.readAsText(file);
   };
-
-  const handleTableCreate = useCallback(() => {
-    const name = window.prompt("Digite o nome da nova tabela:");
-    if (name && name.trim()) {
-      const newTableId = `table-${Date.now()}`;
-      const newTable = { id: newTableId, name: name.trim(), properties: [] };
-      setTables(prev => ({ ...prev, [newTableId]: newTable }));
-      setActiveTableId(newTableId);
-      toast({ title: `Tabela "${name.trim()}" criada!` });
-    }
-  }, []);
-
-  const handleTableRename = useCallback(() => {
-    if (!activeTableId) return;
-    const currentName = tables[activeTableId].name;
-    const newName = window.prompt("Digite o novo nome para a tabela:", currentName);
-    if (newName && newName.trim() && newName.trim() !== currentName) {
-      setTables(prev => {
-        const newTables = { ...prev };
-        newTables[activeTableId].name = newName.trim();
-        return newTables;
-      });
-      toast({ title: `Tabela renomeada para "${newName.trim()}"` });
-    }
-  }, [activeTableId, tables]);
-
-  const handleTableDelete = useCallback(() => {
-    if (!activeTableId || Object.keys(tables).length <= 1) {
-      toast({ variant: 'destructive', title: 'Ação não permitida', description: 'Você não pode excluir a única tabela existente.' });
-      return;
-    }
-    const tableName = tables[activeTableId].name;
-    if (window.confirm(`Tem certeza que deseja excluir a tabela "${tableName}"? Esta ação não pode ser desfeita.`)) {
-      const newTables = { ...tables };
-      delete newTables[activeTableId];
-      
-      const newActiveTableId = Object.keys(newTables)[0];
-      
-      setTables(newTables);
-      setActiveTableId(newActiveTableId);
-      toast({ title: `Tabela "${tableName}" excluída.` });
-    }
-  }, [activeTableId, tables, toast]);
   
   const handleShare = () => {
+    const listName = window.prompt("Digite um nome para a lista compartilhada:", "Minha Lista de Imóveis");
+    if (!listName || !listName.trim()) {
+        toast({ variant: 'destructive', title: 'Ação cancelada', description: 'O nome da lista é obrigatório para compartilhar.' });
+        return;
+    }
+
     startSharingTransition(async () => {
-        const currentProperties = tables[activeTableId!]?.properties || [];
-        const currentName = tables[activeTableId!]?.name || 'Lista de Imóveis';
-        
-        const result = await createShareLink(currentProperties, currentName);
+        const result = await createShareLink(properties, listName.trim());
         if (result.success && result.id) {
             const baseUrl = await getBaseUrl();
             setShareUrl(`${baseUrl}/share/${result.id}`);
@@ -327,17 +259,11 @@ export function PageClient() {
             onAdd={() => setAddEditDialogOpen(true)}
             onImportDoc={() => setImportDialogOpen(true)}
             onImportJson={() => jsonImportRef.current?.click()}
-            onExportCsv={() => exportToCsv(properties, tables[activeTableId!]?.name || 'meus_imoveis')}
-            onExportWord={() => exportToWord(properties, tables[activeTableId!]?.name || 'meus_imoveis')}
+            onExportCsv={() => exportToCsv(properties, "minha_lista_imoveis")}
+            onExportWord={() => exportToWord(properties, "minha_lista_imoveis")}
             onExportJson={handleExportJson}
             onShare={handleShare}
             hasProperties={properties.length > 0}
-            tables={Object.values(tables)}
-            activeTableId={activeTableId}
-            onTableChange={setActiveTableId}
-            onTableCreate={handleTableCreate}
-            onTableRename={handleTableRename}
-            onTableDelete={handleTableDelete}
         />
         {properties.length > 0 && (
           <Card className="mt-6">
@@ -366,7 +292,7 @@ export function PageClient() {
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="text-muted-foreground">Criando link de compartilhamento...</p>
             </div>
-        ) : Object.keys(tables).length > 0 && activeTableId ? (
+        ) : (
             <PropertyTable 
             properties={sortedProperties}
             onEdit={(property) => { setEditingProperty(property); setAddEditDialogOpen(true); }}
@@ -375,14 +301,6 @@ export function PageClient() {
             requestSort={requestSort}
             sortConfig={sortConfig}
             />
-        ) : (
-             <Card className="mt-4">
-                <CardContent className="flex flex-col items-center justify-center gap-4 text-center p-16">
-                    <Home className="h-16 w-16 text-muted-foreground" />
-                    <h3 className="text-2xl font-semibold font-headline">Nenhuma tabela selecionada</h3>
-                    <p className="text-muted-foreground">Crie uma nova tabela ou selecione uma existente para começar.</p>
-                </CardContent>
-            </Card>
         )}
       </main>
       
