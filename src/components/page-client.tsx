@@ -1,22 +1,32 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
+import { useState, useEffect, useMemo, useRef, useTransition } from 'react';
 import { type Property, type PropertyStatus, type PropertyType, type PropertyCategory } from '@/types';
 import { PageHeader } from './page-header';
 import { PropertyTable } from './property-table';
 import { PropertyFormDialog } from './property-form-dialog';
 import { ImportDialog } from './import-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { exportToCsv, exportToWord, exportToJson } from '@/lib/export';
+import { exportToJson } from '@/lib/export';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
+import { Button, buttonVariants } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { X, Loader2 } from 'lucide-react';
 import { PropertyDetailsDialog } from './property-details-dialog';
 import { ShareDialog } from './share-dialog';
 import { useAuth } from '@/context/auth-context';
 import { createShareLink, getBaseUrl } from '@/app/actions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SortableKeys = 'price' | 'areaSize' | 'bedrooms' | 'bathrooms';
 
@@ -56,6 +66,7 @@ export function PageClient() {
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [isImportDialogOpen, setImportDialogOpen] = useState(false);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isSharing, startSharingTransition] = useTransition();
 
@@ -202,6 +213,12 @@ export function PageClient() {
     });
   };
 
+  const handleClearList = () => {
+    setProperties([]);
+    setIsClearConfirmOpen(false);
+    toast({ title: "Lista Limpa!", description: "Todos os imóveis foram removidos da sua visualização local." });
+  };
+
   const filteredProperties = useMemo(() => {
     if (activeTags.length === 0) return properties;
     return properties.filter(p => activeTags.every(tag => p.tags.includes(tag)));
@@ -264,10 +281,11 @@ export function PageClient() {
             onAdd={() => setAddEditDialogOpen(true)}
             onImportDoc={() => setImportDialogOpen(true)}
             onImportJson={() => jsonImportRef.current?.click()}
-            onExportCsv={() => exportToCsv(properties, "minha_lista_imoveis")}
-            onExportWord={() => exportToWord(properties, "minha_lista_imoveis")}
+            onExportCsv={() => {}}
+            onExportWord={() => {}}
             onExportJson={handleExportJson}
             onShare={handleShare}
+            onClearList={() => setIsClearConfirmOpen(true)}
             hasProperties={properties.length > 0}
         />
         {properties.length > 0 && (
@@ -341,6 +359,31 @@ export function PageClient() {
         onOpenChange={setIsShareDialogOpen}
         url={shareUrl}
       />
+
+      <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza que deseja limpar a lista?</AlertDialogTitle>
+            <AlertDialogDescription>
+                Esta ação é irreversível e removerá todos os imóveis da sua visualização local.
+                <br/><br/>
+                <strong className="font-semibold">Isso não afetará nenhum link de compartilhamento que você já criou.</strong>
+                <br/><br/>
+                É altamente recomendável que você exporte um backup JSON antes de continuar.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+                className={buttonVariants({ variant: "destructive" })}
+                onClick={handleClearList}
+            >
+                Sim, Limpar Lista
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }

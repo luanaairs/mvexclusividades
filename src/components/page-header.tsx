@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { PlusCircle, FileUp, Download, FileJson, User, LogOut, Share2 } from "lucide-react";
+import { PlusCircle, FileUp, Download, FileJson, User, LogOut, Share2, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "./theme-toggle";
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -18,6 +18,7 @@ interface PageHeaderProps {
   onExportWord: () => void;
   onExportJson: () => void;
   onShare: () => void;
+  onClearList: () => void;
   hasProperties: boolean;
 }
 
@@ -31,6 +32,7 @@ export function PageHeader({
   onExportWord,
   onExportJson,
   onShare,
+  onClearList,
   hasProperties,
 }: PageHeaderProps) {
 
@@ -66,6 +68,11 @@ export function PageHeader({
               <DropdownMenuItem onClick={onExportJson} disabled={!hasProperties}>Para Backup (JSON)</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onShare} disabled={!hasProperties}><Share2 className="mr-2"/> Compartilhar Lista</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onClearList} disabled={!hasProperties} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                <Trash2 className="mr-2"/>
+                Limpar Lista
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           
