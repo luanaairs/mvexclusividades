@@ -16,7 +16,9 @@ import { X, Loader2 } from 'lucide-react';
 import { PropertyDetailsDialog } from './property-details-dialog';
 import { ShareDialog } from './share-dialog';
 import { useAuth } from '@/context/auth-context';
-import { createShareLink, getBaseUrl } from '@/app/actions';
+import { getBaseUrl } from '@/app/actions';
+import { db, firebaseError } from '@/lib/firebase';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -189,6 +191,10 @@ export function PageClient() {
     reader.readAsText(file);
   };
   
+  function cleanObject(obj: any): any {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
   const handleShare = () => {
     const listName = window.prompt("Digite um nome para a lista compartilhada:", "Minha Lista de Imóveis");
     if (!listName || !listName.trim()) {
@@ -196,19 +202,38 @@ export function PageClient() {
         return;
     }
     
-    if (!user) {
-        toast({ variant: 'destructive', title: 'Erro de Autenticação', description: 'Você precisa estar logado para compartilhar.' });
+    if (!user || !user.uid) {
+        toast({ variant: 'destructive', title: 'Erro de Autenticação', description: 'Você precisa estar logado para compartilhar. Por favor, faça o login novamente.' });
+        return;
+    }
+
+    if (firebaseError || !db) {
+        toast({ variant: 'destructive', title: 'Erro de Configuração', description: "O serviço de banco de dados não está configurado corretamente." });
         return;
     }
 
     startSharingTransition(async () => {
-        const result = await createShareLink(properties, listName.trim(), user.uid);
-        if (result.success && result.id) {
+        try {
+            const cleanedProperties = properties.map(p => cleanObject(p));
+
+            const docRef = await addDoc(collection(db, "shared_lists"), {
+                userId: user.uid,
+                name: listName.trim(),
+                properties: cleanedProperties,
+                createdAt: serverTimestamp(),
+            });
+
             const baseUrl = await getBaseUrl();
-            setShareUrl(`${baseUrl}/share/${result.id}`);
+            setShareUrl(`${baseUrl}/share/${docRef.id}`);
             setIsShareDialogOpen(true);
-        } else {
-            toast({ variant: 'destructive', title: 'Erro ao compartilhar', description: result.error || 'Não foi possível criar o link de compartilhamento.' });
+
+        } catch (error: any) {
+            console.error("Error creating share link:", error);
+            let errorMessage = 'Não foi possível criar o link de compartilhamento.';
+            if (error.code === 'permission-denied') {
+                errorMessage = 'Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore e se você está logado.';
+            }
+            toast({ variant: 'destructive', title: 'Erro ao compartilhar', description: errorMessage });
         }
     });
   };

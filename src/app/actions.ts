@@ -2,15 +2,8 @@
 
 import { auth, db, firebaseError } from '@/lib/firebase';
 import { type Property, type OcrInput, OcrInputSchema } from '@/types';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { headers } from 'next/headers';
 import { extractTextFromDocument } from '@/ai/flows/extract-property-details';
-
-// Helper function to remove undefined values from an object.
-// Firestore cannot store `undefined`.
-function cleanObject(obj: any): any {
-  return JSON.parse(JSON.stringify(obj));
-}
 
 export async function performOcr(input: OcrInput): Promise<{ success: boolean; data?: { text: string }; error?: string }> {
   const parsedInput = OcrInputSchema.safeParse(input);
@@ -25,35 +18,6 @@ export async function performOcr(input: OcrInput): Promise<{ success: boolean; d
   } catch (error: any) {
     console.error('OCR Error:', error);
     return { success: false, error: 'Falha ao extrair texto do documento.' };
-  }
-}
-
-export async function createShareLink(properties: Property[], listName: string, userId: string): Promise<{ success: boolean; id?: string; error?: string; }> {
-  if (firebaseError || !auth || !db) {
-    return { success: false, error: "O serviço de banco de dados não está configurado corretamente." };
-  }
-
-  if (!userId) {
-    return { success: false, error: "Você precisa estar autenticado para compartilhar." };
-  }
-
-  try {
-    const cleanedProperties = properties.map(p => cleanObject(p));
-
-    const docRef = await addDoc(collection(db, "shared_lists"), {
-      userId: userId,
-      name: listName,
-      properties: cleanedProperties,
-      createdAt: serverTimestamp(),
-    });
-
-    return { success: true, id: docRef.id };
-  } catch (error: any) {
-    console.error("Error creating share link:", error);
-    if (error.code === 'permission-denied') {
-        return { success: false, error: 'Erro de permissão no banco de dados. Verifique as Regras de Segurança do Firestore.' };
-    }
-    return { success: false, error: 'Ocorreu um erro ao criar o link de compartilhamento.' };
   }
 }
 
